@@ -6,7 +6,7 @@ const router = express.Router()
  * CREATE SUBMISSION
  */
 router.post('/', async (req, res) => {
-  const { form_id, student_id, answers } = req.body
+  const { form_id, student_id = null, answers } = req.body
   const client = await pool.connect()
 
   try {
