@@ -144,19 +144,33 @@ export default function Submissions() {
               {selectedSubmission.submission.form_name}
             </h3>
 
-            {selectedSubmission.answers.map((ans, index) => (
-              <div key={index} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {ans.label}
-                </label>
+            {selectedSubmission.sections.map((section, idx) => (
+  <div key={idx} className="mb-6">
 
-                <div className="p-2 bg-gray-100 rounded">
-                  {ans.answer_text ||
-                   ans.answer_number ||
-                   JSON.stringify(ans.answer_json)}
-                </div>
-              </div>
-            ))}
+    {/* Section Title */}
+    <h4 className="text-md font-semibold border-b pb-1 mb-3 flex items-center gap-2">
+      {section.title}
+    </h4>
+
+    {/* Section Fields */}
+    {section.answers.map((ans, index) => (
+      <div key={index} className="mb-3">
+        
+        <label className="text-sm text-gray-600">
+          {ans.label}
+        </label>
+
+        <div className="p-2 bg-gray-100 rounded">
+          {typeof ans.value === 'object'
+            ? JSON.stringify(ans.value)
+            : ans.value}
+        </div>
+
+      </div>
+    ))}
+
+  </div>
+))}
 
             <div className="text-right mt-4">
               <button

@@ -118,13 +118,13 @@ router.get('/', async (req, res) => {
 })
 
 /**
- * 🔥 GET SINGLE SUBMISSION (UPDATED FOR VIEW MODAL)
+ * 🔥 GET SINGLE SUBMISSION (UPDATED WITH SECTIONS)
  */
 router.get('/:id', async (req, res) => {
   const { id } = req.params
 
   try {
-    // 🔹 Get submission with form + student info
+    // 🔹 Get submission info
     const submissionResult = await pool.query(
       `SELECT fs.*, f.name as form_name, s.student_identifier
        FROM form_submission fs
@@ -138,19 +138,61 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Submission not found' })
     }
 
-    // 🔹 Get answers with field labels
+    // 🔥 Join sections + fields + answers
     const answersResult = await pool.query(
-      `SELECT fa.*, ff.label
+      `SELECT 
+          fs.id as section_id,
+          fs.title as section_title,
+          fs.display_order as section_order,
+
+          ff.id as field_id,
+          ff.label,
+          ff.display_order as field_order,
+
+          fa.answer_text,
+          fa.answer_number,
+          fa.answer_json
+
        FROM form_answer fa
        JOIN form_field ff ON fa.field_id = ff.id
+       JOIN form_section fs ON ff.section_id = fs.id
+
        WHERE fa.submission_id = $1
-       ORDER BY ff.display_order`,
+
+       ORDER BY fs.display_order, ff.display_order`,
       [id]
+    )
+
+    // 🔥 Group answers by section
+    const sectionMap = {}
+
+    for (const row of answersResult.rows) {
+      if (!sectionMap[row.section_id]) {
+        sectionMap[row.section_id] = {
+          title: row.section_title,
+          order: row.section_order,
+          answers: []
+        }
+      }
+
+      const value =
+        row.answer_text ??
+        row.answer_number ??
+        row.answer_json
+
+      sectionMap[row.section_id].answers.push({
+        label: row.label,
+        value
+      })
+    }
+
+    const sections = Object.values(sectionMap).sort(
+      (a, b) => a.order - b.order
     )
 
     res.json({
       submission: submissionResult.rows[0],
-      answers: answersResult.rows
+      sections
     })
 
   } catch (err) {
