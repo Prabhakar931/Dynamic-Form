@@ -77,7 +77,7 @@ export default function Forms() {
                   <Link to={`/forms/${form.id}/edit`} className="px-4 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200">
                     Edit
                   </Link>
-                  {form.status === 'PUBLISHED' && (
+                  {form.status === 'PUBLISHED' && ( form.sections?.length || 0) > 0 && (
                     <Link to={`/forms/${form.id}/render`} className="px-4 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
                       View Form
                     </Link>
