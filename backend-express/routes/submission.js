@@ -24,7 +24,7 @@ router.post('/', async (req, res) => {
     )
 
     const submission = submissionResult.rows[0]
-
+    console.log('Created submission with ID:', answers)
     // ✅ INSERT ANSWERS
     if (answers && answers.length > 0) {
       for (const answer of answers) {
@@ -256,7 +256,7 @@ router.get('/:id', async (req, res) => {
 
     // ✅ GROUP BY SECTION
     const sectionMap = {}
-
+    console.log(answersResult.rows)
     for (const row of answersResult.rows) {
 
       if (!sectionMap[row.section_id]) {
@@ -312,6 +312,7 @@ router.get('/:id', async (req, res) => {
 
       sectionMap[row.section_id].answers.push({
         label: row.label,
+        field_type: row.field_type,
         value
       })
     }

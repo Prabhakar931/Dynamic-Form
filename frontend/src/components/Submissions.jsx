@@ -159,11 +159,19 @@ export default function Submissions() {
         <label className="text-sm text-gray-600">
           {ans.label}
         </label>
+        
 
         <div className="p-2 bg-gray-100 rounded">
-          {typeof ans.value === 'object'
+          {/* {typeof Array.isArray(ans.value) ? JSON.stringify(ans.value.join(', '))
+            : '' } */}
+          {ans.field_type === 'checkbox' && Array.isArray(ans.value)
+            ? ans.value.join(', ')
+            : typeof ans.value === 'object'
+              ? JSON.stringify(ans.value)
+              : ans.value}
+          {/* {typeof ans.value === 'object' && !Array.isArray(ans.value)
             ? JSON.stringify(ans.value)
-            : ans.value}
+            : ""} */}
         </div>
 
       </div>
