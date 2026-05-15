@@ -5,6 +5,7 @@ import FormBuilder from './components/FormBuilder'
 import FormRenderer from './components/FormRenderer'
 import Students from './components/Students'
 import Submissions from './components/Submissions'
+import FormSubmissions from "./pages/FormSubmissions";
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/forms/:id/render" element={<FormRenderer />} />
           <Route path="/students" element={<Students />} />
           <Route path="/submissions" element={<Submissions />} />
+          <Route path="/forms/:id/submissions" element={<FormSubmissions />}/>
         </Routes>
       </main>
     </div>

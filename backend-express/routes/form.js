@@ -511,6 +511,39 @@ router.get('/:id', async (req, res) => {
   }
 })
 
+router.get('/:id/submissions', async (req, res) => {
+
+  try {
+
+    const result = await pool.query(
+      `
+      SELECT
+        s.*,
+        st.name AS student_name,
+        f.name AS form_name
+      FROM submission s
+      LEFT JOIN student st
+      ON s.student_id = st.id
+      LEFT JOIN form f
+      ON s.form_id = f.id
+      WHERE s.form_id = $1
+      ORDER BY s.submitted_at DESC
+      `,
+      [req.params.id]
+    )
+
+    res.json(result.rows)
+
+  } catch (err) {
+
+    console.error(err)
+
+    res.status(500).json({
+      error: err.message
+    })
+  }
+})
+
 // =========================
 // UPDATE FORM
 // =========================
