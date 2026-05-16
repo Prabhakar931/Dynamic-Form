@@ -21,7 +21,6 @@ const sectionRoutes = require('./routes/section')
 const fieldRoutes = require('./routes/field')
 const optionRoutes = require('./routes/option')
 const matrixRoutes = require('./routes/matrix')
-const studentRoutes = require('./routes/student')
 const submissionRoutes = require('./routes/submission')
 
 app.use('/api/organisations', organisationRoutes)
@@ -30,7 +29,6 @@ app.use('/api/sections', sectionRoutes)
 app.use('/api/fields', fieldRoutes)
 app.use('/api/options', optionRoutes)
 app.use('/api/matrix', matrixRoutes)
-app.use('/api/students', studentRoutes)
 app.use('/api/submissions', submissionRoutes)
 
 app.listen(PORT, () => {
