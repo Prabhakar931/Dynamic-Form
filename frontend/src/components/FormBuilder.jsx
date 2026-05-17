@@ -520,6 +520,12 @@ export default function FormBuilder() {
     if (id) {
       forms.getById(id).then(({ data }) => {
 
+        if (data.submission_count > 0) {
+          alert('Cannot edit a form that has submissions')
+          navigate('/forms')
+          return
+        }
+
         setFormData({
           organisation_id: data.organisation_id,
           name: data.name,
@@ -679,17 +685,14 @@ export default function FormBuilder() {
 
       if (id) {
 
-        await forms.update(id, {
-          name: data.name,
-          description: data.description,
-          status: data.status
-        })
+        await forms.update(id, data)
 
         alert('Form updated!')
 
       } else {
 
         await forms.create(data)
+
         alert('Form created!')
       }
 

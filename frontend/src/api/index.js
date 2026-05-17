@@ -107,47 +107,7 @@ export const options = {
     api.delete(`/options/${id}`),
 }
 
-export const students = {
-  getAll: (organisationId = null) => {
-    const params = organisationId
-      ? { organisation_id: organisationId }
-      : {}
-
-    return api.get('/students/', { params })
-  },
-
-  getById: (id) =>
-    api.get(`/students/${id}`),
-
-  create: (data) =>
-    api.post('/students/', data),
-
-  update: (id, data) =>
-    api.put(`/students/${id}`, data),
-
-  delete: (id) =>
-    api.delete(`/students/${id}`),
-}
-
 export const submissions = {
-  getAll: (
-    formId = null,
-    studentId = null
-  ) => {
-
-    const params = {}
-
-    if (formId)
-      params.form_id = formId
-
-    if (studentId)
-      params.student_id = studentId
-
-    return api.get('/submissions/', {
-      params
-    })
-  },
-
   getById: (id) =>
     api.get(`/submissions/${id}`),
 

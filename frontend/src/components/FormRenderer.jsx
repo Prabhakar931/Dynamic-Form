@@ -616,7 +616,7 @@ export default function FormRenderer() {
 
       alert('Form submitted successfully!')
 
-      navigate('/submissions')
+      navigate('/forms')
 
     } catch (err) {
 

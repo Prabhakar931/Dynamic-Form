@@ -3,7 +3,8 @@ const pool = require('../db')
 const router = express.Router()
 
 const getFormQuery = `
-  SELECT f.*, 
+  SELECT f.*,
+    (SELECT COUNT(*) FROM form_submission WHERE form_id = f.id)::int as submission_count,
     COALESCE(json_agg(
       DISTINCT jsonb_build_object(
         'id', s.id,
@@ -407,7 +408,8 @@ router.get('/', async (req, res) => {
   try {
 
     let query = `
-      SELECT f.*, 
+      SELECT f.*,
+        (SELECT COUNT(*) FROM form_submission WHERE form_id = f.id)::int as submission_count,
         COALESCE(json_agg(
           DISTINCT jsonb_build_object(
             'id', s.id,
@@ -519,11 +521,12 @@ router.get('/:id/submissions', async (req, res) => {
       `
       SELECT
         s.*,
-        st.name AS student_name,
-        f.name AS form_name
-      FROM submission s
-      LEFT JOIN student st
-      ON s.student_id = st.id
+        f.name AS form_name,
+        COALESCE(
+          (SELECT COUNT(*) FROM form_answer WHERE submission_id = s.id),
+          0
+        )::int AS answer_count
+      FROM form_submission s
       LEFT JOIN form f
       ON s.form_id = f.id
       WHERE s.form_id = $1
@@ -551,24 +554,36 @@ router.get('/:id/submissions', async (req, res) => {
 router.put('/:id', async (req, res) => {
 
   const {
+    organisation_id,
     name,
     description,
-    status
+    status,
+    sections
   } = req.body
+
+  const client = await pool.connect()
 
   try {
 
-    const result = await pool.query(
+    await client.query('BEGIN')
+
+    // =========================
+    // UPDATE FORM
+    // =========================
+
+    const formResult = await client.query(
       `
       UPDATE form
       SET
-        name = COALESCE($1, name),
-        description = COALESCE($2, description),
-        status = COALESCE($3, status)
-      WHERE id = $4
+        organisation_id = $1,
+        name = $2,
+        description = $3,
+        status = $4
+      WHERE id = $5
       RETURNING *
       `,
       [
+        organisation_id,
         name,
         description,
         status,
@@ -576,19 +591,207 @@ router.put('/:id', async (req, res) => {
       ]
     )
 
-    if (result.rows.length === 0) {
+    if (formResult.rows.length === 0) {
+
+      await client.query('ROLLBACK')
+
       return res.status(404).json({
         error: 'Form not found'
       })
     }
 
-    res.json(result.rows[0])
+    // =========================
+    // DELETE OLD DATA
+    // =========================
+
+    // Delete matrix configs
+    await client.query(`
+      DELETE FROM field_matrix_config
+      WHERE field_id IN (
+        SELECT id FROM form_field
+        WHERE section_id IN (
+          SELECT id FROM form_section
+          WHERE form_id = $1
+        )
+      )
+    `, [req.params.id])
+
+    // Delete field options
+    await client.query(`
+      DELETE FROM field_option
+      WHERE field_id IN (
+        SELECT id FROM form_field
+        WHERE section_id IN (
+          SELECT id FROM form_section
+          WHERE form_id = $1
+        )
+      )
+    `, [req.params.id])
+
+    // Delete fields
+    await client.query(`
+      DELETE FROM form_field
+      WHERE section_id IN (
+        SELECT id FROM form_section
+        WHERE form_id = $1
+      )
+    `, [req.params.id])
+
+    // Delete sections
+    await client.query(`
+      DELETE FROM form_section
+      WHERE form_id = $1
+    `, [req.params.id])
+
+    // =========================
+    // RECREATE SECTIONS
+    // =========================
+
+    for (const sectionData of sections || []) {
+
+      const sectionResult = await client.query(
+        `
+        INSERT INTO form_section
+        (
+          form_id,
+          title,
+          description,
+          display_order
+        )
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+        `,
+        [
+          req.params.id,
+          sectionData.title,
+          sectionData.description || null,
+          sectionData.display_order || 0
+        ]
+      )
+
+      const section = sectionResult.rows[0]
+
+      // =========================
+      // CREATE FIELDS
+      // =========================
+
+      for (const fieldData of sectionData.fields || []) {
+
+        const fieldResult = await client.query(
+          `
+          INSERT INTO form_field
+          (
+            section_id,
+            label,
+            field_key,
+            field_type,
+            is_required,
+            display_order,
+            field_config
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING *
+          `,
+          [
+            section.id,
+            fieldData.label,
+            fieldData.field_key,
+            fieldData.field_type,
+            fieldData.is_required || false,
+            fieldData.display_order || 0,
+            fieldData.field_config || {}
+          ]
+        )
+
+        const field = fieldResult.rows[0]
+
+        // =========================
+        // CREATE OPTIONS
+        // =========================
+
+        if (
+          fieldData.options &&
+          fieldData.options.length > 0
+        ) {
+
+          for (const option of fieldData.options) {
+
+            await client.query(
+              `
+              INSERT INTO field_option
+              (
+                field_id,
+                value,
+                label,
+                display_order
+              )
+              VALUES ($1, $2, $3, $4)
+              `,
+              [
+                field.id,
+                option.value,
+                option.label,
+                option.display_order || 0
+              ]
+            )
+          }
+        }
+
+        // =========================
+        // CREATE MATRIX CONFIG
+        // =========================
+
+        if (
+          fieldData.field_type === 'matrix' &&
+          fieldData.matrix_config
+        ) {
+
+          await client.query(
+            `
+            INSERT INTO field_matrix_config
+            (
+              field_id,
+              rows,
+              columns
+            )
+            VALUES ($1, $2, $3)
+            `,
+            [
+              field.id,
+              JSON.stringify(fieldData.matrix_config.rows || []),
+              JSON.stringify(fieldData.matrix_config.columns || [])
+            ]
+          )
+        }
+      }
+    }
+
+    await client.query('COMMIT')
+
+    // =========================
+    // RETURN UPDATED FORM
+    // =========================
+
+    const updatedForm = await client.query(
+      getFormQuery,
+      [req.params.id]
+    )
+
+    res.json(updatedForm.rows[0])
 
   } catch (err) {
+
+    await client.query('ROLLBACK')
+
+    console.error(err)
 
     res.status(500).json({
       error: err.message
     })
+
+  } finally {
+
+    client.release()
   }
 })
 
