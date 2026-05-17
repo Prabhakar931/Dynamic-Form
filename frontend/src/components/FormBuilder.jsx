@@ -142,7 +142,7 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
 
     const newCols = [
       ...(field.matrix_config?.columns || []),
-      { label: '', type: 'text' }
+      { label: '', type: 'text', required: false }
     ]
 
     updateField(fieldIdx, {
@@ -302,21 +302,25 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
                 ))}
               </select>
 
-              <label className="flex items-center gap-2 px-3 py-2">
-                <input
-                  type="checkbox"
-                  checked={field.is_required}
-                  onChange={(e) =>
-                    updateField(fieldIdx, {
-                      is_required: e.target.checked
-                    })
-                  }
-                />
+              {field.field_type !== 'matrix' && (
+                <label className="flex items-center gap-2 px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={field.is_required}
+                    onChange={(e) =>
+                      updateField(fieldIdx, {
+                        is_required: e.target.checked
+                      })
+                    }
+                  />
 
-                <span className="text-sm">
-                  Required
-                </span>
-              </label>
+                  <span className="text-sm">
+                    Required
+                  </span>
+                </label>
+              )}
+
+              {field.field_type === 'matrix' && <div className="px-3 py-2" />}
 
               <input
                 type="number"
@@ -482,6 +486,17 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
                             <option value="number">number</option>
                             <option value="text">text</option>
                           </select>
+
+                          <label className="flex items-center gap-1 text-xs whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={colObj.required ?? false}
+                              onChange={(e) =>
+                                updateMatrixColumn(fieldIdx, idx, { required: e.target.checked })
+                              }
+                            />
+                            Required
+                          </label>
 
                           <button
                             type="button"

@@ -533,10 +533,7 @@ export default function FormRenderer() {
         }
 
         // MATRIX VALIDATION
-        if (
-          field.field_type === 'matrix' &&
-          field.is_required
-        ) {
+        if (field.field_type === 'matrix') {
 
           const matrixAnswers = value || {}
 
@@ -550,6 +547,8 @@ export default function FormRenderer() {
           )
 
           if (isOldFormat) {
+
+            if (!field.is_required) continue
 
             for (const row of rows) {
 
@@ -572,10 +571,11 @@ export default function FormRenderer() {
               for (const col of columns) {
 
                 const colLabel = typeof col === 'string' ? col : col.label
-                const colType = typeof col === 'string' ? 'radio' : col.type
-                const cellValue = matrixAnswers?.[row]?.[colLabel]
+                const colRequired = typeof col === 'string' ? true : (col.required ?? false)
 
-                if (colType === 'checkbox') continue
+                if (!colRequired) continue
+
+                const cellValue = matrixAnswers?.[row]?.[colLabel]
 
                 if (
                   cellValue === undefined ||
