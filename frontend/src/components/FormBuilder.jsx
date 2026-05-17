@@ -142,7 +142,7 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
 
     const newCols = [
       ...(field.matrix_config?.columns || []),
-      ''
+      { label: '', type: 'text' }
     ]
 
     updateField(fieldIdx, {
@@ -153,11 +153,11 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
     })
   }
 
-  const updateMatrixColumn = (fieldIdx, idx, value) => {
+  const updateMatrixColumn = (fieldIdx, idx, patch) => {
     const field = section.fields[fieldIdx]
 
     const newCols = [...(field.matrix_config?.columns || [])]
-    newCols[idx] = value
+    newCols[idx] = { ...newCols[idx], ...patch }
 
     updateField(fieldIdx, {
       matrix_config: {
@@ -454,30 +454,46 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
                       </button>
                     </div>
 
-                    {(field.matrix_config?.columns || []).map((col, idx) => (
+                    {(field.matrix_config?.columns || []).map((col, idx) => {
 
-                      <div key={idx} className="flex gap-2 mb-2">
+                      const colObj = typeof col === 'string' ? { label: col, type: 'radio' } : col
 
-                        <input
-                          type="text"
-                          value={col}
-                          onChange={(e) =>
-                            updateMatrixColumn(fieldIdx, idx, e.target.value)
-                          }
-                          placeholder="Column value"
-                          className="flex-1 px-3 py-1 border rounded text-sm"
-                        />
+                      return (
+                        <div key={idx} className="flex gap-2 mb-2">
 
-                        <button
-                          type="button"
-                          onClick={() => removeMatrixColumn(fieldIdx, idx)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          &times;
-                        </button>
+                          <input
+                            type="text"
+                            value={colObj.label}
+                            onChange={(e) =>
+                              updateMatrixColumn(fieldIdx, idx, { label: e.target.value })
+                            }
+                            placeholder="Column label"
+                            className="flex-1 px-3 py-1 border rounded text-sm"
+                          />
 
-                      </div>
-                    ))}
+                          <select
+                            value={colObj.type}
+                            onChange={(e) =>
+                              updateMatrixColumn(fieldIdx, idx, { type: e.target.value })
+                            }
+                            className="px-2 py-1 border rounded text-sm"
+                          >
+                            <option value="checkbox">checkbox</option>
+                            <option value="number">number</option>
+                            <option value="text">text</option>
+                          </select>
+
+                          <button
+                            type="button"
+                            onClick={() => removeMatrixColumn(fieldIdx, idx)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            &times;
+                          </button>
+
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
@@ -653,7 +669,10 @@ export default function FormBuilder() {
 
           if (
             rows.some(r => !r.trim()) ||
-            columns.some(c => !c.trim())
+            columns.some(c => {
+              if (typeof c === 'string') return !c.trim()
+              return !c.label || !c.label.trim() || !c.type
+            })
           ) {
             alert(`${field.label} matrix rows/columns cannot be empty`)
             return

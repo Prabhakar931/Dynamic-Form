@@ -227,14 +227,19 @@ function FieldRenderer({ field, value, onChange }) {
                   Question
                 </th>
 
-                {field.matrix_config?.columns?.map((col, idx) => (
-                  <th
-                    key={idx}
-                    className="border p-2 bg-gray-50"
-                  >
-                    {col}
-                  </th>
-                ))}
+                {field.matrix_config?.columns?.map((col, idx) => {
+
+                  const colLabel = typeof col === 'string' ? col : col.label
+
+                  return (
+                    <th
+                      key={idx}
+                      className="border p-2 bg-gray-50"
+                    >
+                      {colLabel}
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
 
@@ -247,25 +252,79 @@ function FieldRenderer({ field, value, onChange }) {
                     {row}
                   </td>
 
-                  {field.matrix_config?.columns?.map((col, colIdx) => (
+                  {field.matrix_config?.columns?.map((col, colIdx) => {
 
-                    <td
-                      key={colIdx}
-                      className="border p-2 text-center"
-                    >
-                      <input
-                        type="radio"
-                        name={`${field.field_key}_${row}`}
-                        checked={value?.[row] === col}
-                        onChange={() =>
-                          onChange({
-                            ...(value || {}),
-                            [row]: col
-                          })
-                        }
-                      />
-                    </td>
-                  ))}
+                    const colLabel = typeof col === 'string' ? col : col.label
+                    const colType = typeof col === 'string' ? 'radio' : (col.type || 'text')
+                    const isOldFormat = value?.[row] && typeof value[row] === 'string'
+
+                    const cellValue = isOldFormat
+                      ? value?.[row]
+                      : value?.[row]?.[colLabel]
+
+                    const handleChange = (newVal) => {
+                      if (isOldFormat) {
+                        onChange({
+                          ...(value || {}),
+                          [row]: newVal
+                        })
+                      } else {
+                        onChange({
+                          ...(value || {}),
+                          [row]: {
+                            ...(value?.[row] || {}),
+                            [colLabel]: newVal
+                          }
+                        })
+                      }
+                    }
+
+                    return (
+                      <td
+                        key={colIdx}
+                        className="border p-2 text-center"
+                      >
+                        {colType === 'checkbox' ? (
+                          <input
+                            type="checkbox"
+                            checked={!!cellValue}
+                            onChange={(e) =>
+                              handleChange(e.target.checked)
+                            }
+                          />
+                        ) : colType === 'number' ? (
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={cellValue ?? ''}
+                            onChange={(e) =>
+                              handleChange(Number(e.target.value))
+                            }
+                            className="w-20 px-2 py-1 border rounded text-sm"
+                          />
+                        ) : colType === 'radio' ? (
+                          <input
+                            type="radio"
+                            name={`${field.field_key}_${row}`}
+                            checked={cellValue === colLabel}
+                            onChange={() =>
+                              handleChange(colLabel)
+                            }
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={cellValue ?? ''}
+                            onChange={(e) =>
+                              handleChange(e.target.value)
+                            }
+                            className="w-full px-2 py-1 border rounded text-sm"
+                          />
+                        )}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -483,18 +542,53 @@ export default function FormRenderer() {
 
           const rows =
             field.matrix_config?.rows || []
+          const columns =
+            field.matrix_config?.columns || []
 
-          for (const row of rows) {
+          const isOldFormat = rows.some(
+            row => matrixAnswers[row] && typeof matrixAnswers[row] === 'string'
+          )
 
-            if (
-              !matrixAnswers[row] ||
-              String(matrixAnswers[row]).trim() === ''
-            ) {
-              alert(
-                `${field.label}: ${row} is required`
-              )
+          if (isOldFormat) {
 
-              return false
+            for (const row of rows) {
+
+              if (
+                !matrixAnswers[row] ||
+                String(matrixAnswers[row]).trim() === ''
+              ) {
+                alert(
+                  `${field.label}: ${row} is required`
+                )
+
+                return false
+              }
+            }
+
+          } else {
+
+            for (const row of rows) {
+
+              for (const col of columns) {
+
+                const colLabel = typeof col === 'string' ? col : col.label
+                const colType = typeof col === 'string' ? 'radio' : col.type
+                const cellValue = matrixAnswers?.[row]?.[colLabel]
+
+                if (colType === 'checkbox') continue
+
+                if (
+                  cellValue === undefined ||
+                  cellValue === null ||
+                  cellValue === ''
+                ) {
+                  alert(
+                    `${field.label}: ${row} - ${colLabel} is required`
+                  )
+
+                  return false
+                }
+              }
             }
           }
         }
