@@ -258,28 +258,10 @@ router.get('/:id', async (req, res) => {
         }
       }
 
-      let value = null
-
-      if (row.answer_text !== null) {
-        value = row.answer_text
-
-      } else if (row.answer_number !== null) {
-        value = row.answer_number
-
-      } else if (row.answer_json !== null) {
-
-        try {
-
-          value =
-            typeof row.answer_json === 'object'
-              ? row.answer_json
-              : JSON.parse(row.answer_json)
-
-        } catch {
-
-          value = row.answer_json
-        }
-      }
+      let value =
+        row.answer_text ??
+        row.answer_number ??
+        row.answer_json
 
       // ✅ HANDLE RADIO / DROPDOWN
       if (
@@ -294,71 +276,29 @@ router.get('/:id', async (req, res) => {
         }
       }
 
-      // ✅ HANDLE CHECKBOX / MULTISELECT / REPEATABLE GROUP
+      // ✅ HANDLE CHECKBOX / MULTISELECT
       if (
-        ['checkbox', 'multiselect', 'repeatable_group']
-          .includes(row.field_type)
+        ['checkbox', 'multiselect'].includes(row.field_type)
       ) {
-
         let parsedValues = []
 
         try {
-
-          parsedValues = Array.isArray(value)
-            ? value
-            : JSON.parse(value || '[]')
-
+          parsedValues = Array.isArray(row.answer_json)
+            ? row.answer_json
+            : JSON.parse(row.answer_json || '[]')
         } catch {
-
           parsedValues = []
         }
 
-        // checkbox / multiselect labels
-        if (
-          ['checkbox', 'multiselect']
-            .includes(row.field_type)
-        ) {
+        value = parsedValues.map((selectedValue) => {
+          const matchedOption = row.options.find(
+            (opt) => opt.value === selectedValue
+          )
 
-          value = parsedValues.map((selectedValue) => {
-
-            const matchedOption = row.options.find(
-              (opt) => opt.value === selectedValue
-            )
-
-            return matchedOption
-              ? matchedOption.label
-              : selectedValue
-          })
-
-        } else {
-
-          // repeatable group
-          value = parsedValues
-        }
-      }
-
-      // ✅ HANDLE MATRIX
-      
-      if (row.field_type === 'matrix') {
-
-        // PostgreSQL json/jsonb may already return object
-        // or sometimes return stringified JSON
-
-        if (typeof value === 'string') {
-
-          try {
-            value = JSON.parse(value)
-          } catch {
-            value = {}
-          }
-
-        } else if (
-          typeof value !== 'object' ||
-          value === null
-        ) {
-
-          value = {}
-        }
+          return matchedOption
+            ? matchedOption.label
+            : selectedValue
+        })
       }
 
       sectionMap[row.section_id].answers.push({
