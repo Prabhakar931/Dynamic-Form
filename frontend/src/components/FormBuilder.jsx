@@ -32,9 +32,6 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
           matrix_config: {
             rows: [],
             columns: []
-          },
-          repeatable_config: {
-            fields: []
           }
         }
       ]
@@ -145,8 +142,7 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
 
     const newCols = [
       ...(field.matrix_config?.columns || []),
-      ''
-      //{ label: '', type: 'text', required: false }
+      { label: '', type: 'text', required: false }
     ]
 
     updateField(fieldIdx, {
@@ -157,11 +153,11 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
     })
   }
 
-  const updateMatrixColumn = (fieldIdx, idx, value) => {
+  const updateMatrixColumn = (fieldIdx, idx, patch) => {
     const field = section.fields[fieldIdx]
 
     const newCols = [...(field.matrix_config?.columns || [])]
-    newCols[idx] = value
+    newCols[idx] = { ...newCols[idx], ...patch }
 
     updateField(fieldIdx, {
       matrix_config: {
@@ -306,21 +302,25 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
                 ))}
               </select>
 
-              <label className="flex items-center gap-2 px-3 py-2">
-                <input
-                  type="checkbox"
-                  checked={field.is_required}
-                  onChange={(e) =>
-                    updateField(fieldIdx, {
-                      is_required: e.target.checked
-                    })
-                  }
-                />
+              {field.field_type !== 'matrix' && (
+                <label className="flex items-center gap-2 px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={field.is_required}
+                    onChange={(e) =>
+                      updateField(fieldIdx, {
+                        is_required: e.target.checked
+                      })
+                    }
+                  />
 
-                <span className="text-sm">
-                  Required
-                </span>
-              </label>
+                  <span className="text-sm">
+                    Required
+                  </span>
+                </label>
+              )}
+
+              {field.field_type === 'matrix' && <div className="px-3 py-2" />}
 
               <input
                 type="number"
@@ -440,109 +440,6 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
 
                       </div>
                     ))}
-                    {field.field_type === 'repeatable_group' && (
-
-                      <div className="mt-3 border-t pt-3">
-
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-sm font-medium">
-                            Repeatable Fields
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-
-                              const existing =
-                                field.repeatable_config?.fields || []
-
-                              updateField(fieldIdx, {
-                                repeatable_config: {
-                                  fields: [
-                                    ...existing,
-                                    {
-                                      label: '',
-                                      field_key: '',
-                                      field_type: 'text',
-                                      is_required: false,
-                                      display_order: existing.length + 1,
-                                      field_config: {},
-                                      options: []
-                                    }
-                                  ]
-                                }
-                              })
-                            }}
-                            className="text-sm text-blue-600 hover:text-blue-800"
-                          >
-                            + Add Item
-                          </button>
-                        </div>
-
-                        {(field.repeatable_config?.fields || []).map(
-                          (subField, subIdx) => (
-
-                            <div
-                              key={subIdx}
-                              className="border rounded p-3 mb-3 bg-gray-50"
-                            >
-                             
-
-                              <input
-                                type="text"
-                                value={item.label}
-                                onChange={(e) => {
-
-                                  const updatedFields = [
-                                    ...(field.repeatable_config?.fields || [])
-                                  ]
-
-                                  updatedFields[idx].label =
-                                    e.target.value
-
-                                  updatedFields[idx].key =
-                                    e.target.value
-                                      .toLowerCase()
-                                      .replace(/[^a-z0-9]+/g, '_')
-                                      .replace(/^_|_$/g, '')
-
-                                  updateField(fieldIdx, {
-                                    repeatable_config: {
-                                      fields: updatedFields
-                                    }
-                                  })
-                                }}
-                                placeholder="Field Label"
-                                className="flex-1 px-3 py-1 border rounded text-sm"
-                              />
-
-                              <button
-                                type="button"
-                                onClick={() => {
-
-                                  const updatedFields =
-                                    (field.repeatable_config?.fields || [])
-                                      .filter((_, i) => i !== idx)
-
-                                  updateField(fieldIdx, {
-                                    repeatable_config: {
-                                      fields: updatedFields
-                                    }
-                                  })
-                                }}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                &times;
-                              </button>
-
-                            </div>
-
-                          )
-                        )}
-
-                      </div>
-
-                    )}
                   </div>
 
                   <div>
@@ -561,30 +458,57 @@ function SectionBuilder({ section, onUpdate, onDelete, index }) {
                       </button>
                     </div>
 
-                    {(field.matrix_config?.columns || []).map((col, idx) => (
+                    {(field.matrix_config?.columns || []).map((col, idx) => {
 
-                      <div key={idx} className="flex gap-2 mb-2">
+                      const colObj = typeof col === 'string' ? { label: col, type: 'radio' } : col
 
-                        <input
-                          type="text"
-                          value={col}
-                          onChange={(e) =>
-                            updateMatrixColumn(fieldIdx, idx, e.target.value)
-                          }
-                          placeholder="Column value"
-                          className="flex-1 px-3 py-1 border rounded text-sm"
-                        />
+                      return (
+                        <div key={idx} className="flex gap-2 mb-2">
 
-                        <button
-                          type="button"
-                          onClick={() => removeMatrixColumn(fieldIdx, idx)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          &times;
-                        </button>
+                          <input
+                            type="text"
+                            value={colObj.label}
+                            onChange={(e) =>
+                              updateMatrixColumn(fieldIdx, idx, { label: e.target.value })
+                            }
+                            placeholder="Column label"
+                            className="flex-1 px-3 py-1 border rounded text-sm"
+                          />
 
-                      </div>
-                    ))}
+                          <select
+                            value={colObj.type}
+                            onChange={(e) =>
+                              updateMatrixColumn(fieldIdx, idx, { type: e.target.value })
+                            }
+                            className="px-2 py-1 border rounded text-sm"
+                          >
+                            <option value="checkbox">checkbox</option>
+                            <option value="number">number</option>
+                            <option value="text">text</option>
+                          </select>
+
+                          <label className="flex items-center gap-1 text-xs whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={colObj.required ?? false}
+                              onChange={(e) =>
+                                updateMatrixColumn(fieldIdx, idx, { required: e.target.checked })
+                              }
+                            />
+                            Required
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => removeMatrixColumn(fieldIdx, idx)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            &times;
+                          </button>
+
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
@@ -760,7 +684,10 @@ export default function FormBuilder() {
 
           if (
             rows.some(r => !r.trim()) ||
-            columns.some(c => !c.trim())
+            columns.some(c => {
+              if (typeof c === 'string') return !c.trim()
+              return !c.label || !c.label.trim() || !c.type
+            })
           ) {
             alert(`${field.label} matrix rows/columns cannot be empty`)
             return
@@ -792,14 +719,17 @@ export default function FormBuilder() {
 
       if (id) {
 
-        await forms.update(id, data)
+        await forms.update(id, {
+          name: data.name,
+          description: data.description,
+          status: data.status
+        })
 
         alert('Form updated!')
 
       } else {
 
         await forms.create(data)
-
         alert('Form created!')
       }
 

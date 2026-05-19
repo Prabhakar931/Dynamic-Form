@@ -18,8 +18,8 @@ function FieldRenderer({ field, value, onChange }) {
             field.field_type === 'email'
               ? 'email'
               : field.field_type === 'phone'
-                ? 'tel'
-                : 'text'
+              ? 'tel'
+              : 'text'
           }
           value={value || ''}
           onChange={(e) => {
@@ -150,8 +150,8 @@ function FieldRenderer({ field, value, onChange }) {
                     const newVals = e.target.checked
                       ? [...(value || []), opt.value]
                       : (value || []).filter(
-                        (v) => v !== opt.value
-                      )
+                          (v) => v !== opt.value
+                        )
 
                     onChange(newVals)
                   }}
@@ -203,10 +203,11 @@ function FieldRenderer({ field, value, onChange }) {
               key={n}
               type="button"
               onClick={() => onChange(String(n))}
-              className={`w-10 h-10 rounded-full border-2 ${parseInt(value) === n
+              className={`w-10 h-10 rounded-full border-2 ${
+                parseInt(value) === n
                   ? 'bg-yellow-400 border-yellow-500'
                   : 'border-gray-300 hover:border-yellow-400'
-                } flex items-center justify-center font-bold`}
+              } flex items-center justify-center font-bold`}
             >
               {n}
             </button>
@@ -226,14 +227,19 @@ function FieldRenderer({ field, value, onChange }) {
                   Question
                 </th>
 
-                {field.matrix_config?.columns?.map((col, idx) => (
-                  <th
-                    key={idx}
-                    className="border p-2 bg-gray-50"
-                  >
-                    {col}
-                  </th>
-                ))}
+                {field.matrix_config?.columns?.map((col, idx) => {
+
+                  const colLabel = typeof col === 'string' ? col : col.label
+
+                  return (
+                    <th
+                      key={idx}
+                      className="border p-2 bg-gray-50"
+                    >
+                      {colLabel}
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
 
@@ -246,25 +252,79 @@ function FieldRenderer({ field, value, onChange }) {
                     {row}
                   </td>
 
-                  {field.matrix_config?.columns?.map((col, colIdx) => (
+                  {field.matrix_config?.columns?.map((col, colIdx) => {
 
-                    <td
-                      key={colIdx}
-                      className="border p-2 text-center"
-                    >
-                      <input
-                        type="radio"
-                        name={`${field.field_key}_${row}`}
-                        checked={value?.[row] === col}
-                        onChange={() =>
-                          onChange({
-                            ...(value || {}),
-                            [row]: col
-                          })
-                        }
-                      />
-                    </td>
-                  ))}
+                    const colLabel = typeof col === 'string' ? col : col.label
+                    const colType = typeof col === 'string' ? 'radio' : (col.type || 'text')
+                    const isOldFormat = value?.[row] && typeof value[row] === 'string'
+
+                    const cellValue = isOldFormat
+                      ? value?.[row]
+                      : value?.[row]?.[colLabel]
+
+                    const handleChange = (newVal) => {
+                      if (isOldFormat) {
+                        onChange({
+                          ...(value || {}),
+                          [row]: newVal
+                        })
+                      } else {
+                        onChange({
+                          ...(value || {}),
+                          [row]: {
+                            ...(value?.[row] || {}),
+                            [colLabel]: newVal
+                          }
+                        })
+                      }
+                    }
+
+                    return (
+                      <td
+                        key={colIdx}
+                        className="border p-2 text-center"
+                      >
+                        {colType === 'checkbox' ? (
+                          <input
+                            type="checkbox"
+                            checked={!!cellValue}
+                            onChange={(e) =>
+                              handleChange(e.target.checked)
+                            }
+                          />
+                        ) : colType === 'number' ? (
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={cellValue ?? ''}
+                            onChange={(e) =>
+                              handleChange(Number(e.target.value))
+                            }
+                            className="w-20 px-2 py-1 border rounded text-sm"
+                          />
+                        ) : colType === 'radio' ? (
+                          <input
+                            type="radio"
+                            name={`${field.field_key}_${row}`}
+                            checked={cellValue === colLabel}
+                            onChange={() =>
+                              handleChange(colLabel)
+                            }
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={cellValue ?? ''}
+                            onChange={(e) =>
+                              handleChange(e.target.value)
+                            }
+                            className="w-full px-2 py-1 border rounded text-sm"
+                          />
+                        )}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -306,7 +366,7 @@ function FieldRenderer({ field, value, onChange }) {
 
               <div className="space-y-4">
 
-                {(field.repeatable_config?.fields || []).map((subField) => (
+                {(field.field_config?.fields || []).map((subField) => (
 
                   <div key={subField.field_key}>
 
@@ -473,32 +533,66 @@ export default function FormRenderer() {
         }
 
         // MATRIX VALIDATION
-        if (
-          field.field_type === 'matrix' &&
-          field.is_required
-        ) {
+        if (field.field_type === 'matrix') {
 
           const matrixAnswers = value || {}
 
           const rows =
             field.matrix_config?.rows || []
+          const columns =
+            field.matrix_config?.columns || []
 
-          for (const row of rows) {
+          const isOldFormat = rows.some(
+            row => matrixAnswers[row] && typeof matrixAnswers[row] === 'string'
+          )
 
-            if (
-              !matrixAnswers[row] ||
-              String(matrixAnswers[row]).trim() === ''
-            ) {
-              alert(
-                `${field.label}: ${row} is required`
-              )
+          if (isOldFormat) {
 
-              return false
+            if (!field.is_required) continue
+
+            for (const row of rows) {
+
+              if (
+                !matrixAnswers[row] ||
+                String(matrixAnswers[row]).trim() === ''
+              ) {
+                alert(
+                  `${field.label}: ${row} is required`
+                )
+
+                return false
+              }
+            }
+
+          } else {
+
+            for (const row of rows) {
+
+              for (const col of columns) {
+
+                const colLabel = typeof col === 'string' ? col : col.label
+                const colRequired = typeof col === 'string' ? true : (col.required ?? false)
+
+                if (!colRequired) continue
+
+                const cellValue = matrixAnswers?.[row]?.[colLabel]
+
+                if (
+                  cellValue === undefined ||
+                  cellValue === null ||
+                  cellValue === ''
+                ) {
+                  alert(
+                    `${field.label}: ${row} - ${colLabel} is required`
+                  )
+
+                  return false
+                }
+              }
             }
           }
         }
 
-        
         // REPEATABLE GROUP VALIDATION
         if (
           field.field_type === 'repeatable_group'
@@ -521,7 +615,7 @@ export default function FormRenderer() {
 
             for (
               const subField of
-              field.repeatable_config?.fields || []
+              field.field_config?.fields || []
             ) {
 
               const subValue =
