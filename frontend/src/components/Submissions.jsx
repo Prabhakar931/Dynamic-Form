@@ -2,25 +2,19 @@ import { useState, useEffect } from 'react'
 import { submissions, forms, students } from '../api'
 
 export default function Submissions() {
-
   const [submissionsList, setSubmissions] = useState([])
   const [formsList, setFormsList] = useState([])
   const [studentsList, setStudentsList] = useState([])
-
   const [selectedForm, setSelectedForm] = useState('')
   const [selectedStudent, setSelectedStudent] = useState('')
 
+  // 🔥 NEW STATE
   const [selectedSubmission, setSelectedSubmission] = useState(null)
   const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
-
-    forms.getAll()
-      .then(({ data }) => setFormsList(data))
-
-    students.getAll()
-      .then(({ data }) => setStudentsList(data))
-
+    forms.getAll().then(({ data }) => setFormsList(data))
+    students.getAll().then(({ data }) => setStudentsList(data))
   }, [])
 
   useEffect(() => {
@@ -28,62 +22,27 @@ export default function Submissions() {
   }, [selectedForm, selectedStudent])
 
   const fetchSubmissions = async () => {
-
-    try {
-
-      const formId = selectedForm || null
-      const studentId = selectedStudent || null
-
-      const { data } = await submissions.getAll(
-        formId,
-        studentId
-      )
-
-      setSubmissions(data)
-
-    } catch (err) {
-
-      console.error(err)
-    }
+    const formId = selectedForm || null
+    const studentId = selectedStudent || null
+    const { data } = await submissions.getAll(formId, studentId)
+    setSubmissions(data)
   }
 
   const handleDelete = async (id) => {
-
-    const confirmed = window.confirm(
-      'Delete this submission?'
-    )
-
-    if (!confirmed) return
-
-    try {
-
+    if (confirm('Delete this submission?')) {
       await submissions.delete(id)
-
       fetchSubmissions()
-
-    } catch (err) {
-
-      console.error(err)
-
-      alert('Failed to delete submission')
     }
   }
 
+  // 🔥 VIEW HANDLER
   const handleView = async (id) => {
-
     try {
-
       const { data } = await submissions.getById(id)
-
       setSelectedSubmission(data)
-
       setShowModal(true)
-
     } catch (err) {
-
       console.error(err)
-
-      alert('Failed to load submission')
     }
   }
 
@@ -91,352 +50,126 @@ export default function Submissions() {
     formsList.find(f => f.id === formId)?.name || 'Unknown'
 
   const getStudentName = (studentId) =>
-    studentsList.find(s => s.id === studentId)
-      ?.student_identifier || 'Unknown'
+    studentsList.find(s => s.id === studentId)?.student_identifier || 'Unknown'
 
   return (
     <div>
+      <h2 className="text-2xl font-bold mb-6">Submissions</h2>
 
-      <h2 className="text-2xl font-bold mb-6">
-        Submissions
-      </h2>
-
-      {/* FILTERS */}
       <div className="flex gap-4 mb-6">
-
         <select
           value={selectedForm}
-          onChange={(e) =>
-            setSelectedForm(e.target.value)
-          }
+          onChange={(e) => setSelectedForm(e.target.value)}
           className="px-4 py-2 border rounded-lg"
         >
-
-          <option value="">
-            All Forms
-          </option>
-
-          {formsList.map(form => (
-            <option key={form.id} value={form.id}>
-              {form.name}
+          <option value="">All Forms</option>
+          {formsList.map(f => (
+            <option key={f.id} value={f.id}>
+              {f.name}
             </option>
           ))}
-
         </select>
 
         <select
           value={selectedStudent}
-          onChange={(e) =>
-            setSelectedStudent(e.target.value)
-          }
+          onChange={(e) => setSelectedStudent(e.target.value)}
           className="px-4 py-2 border rounded-lg"
         >
-
-          <option value="">
-            All Students
-          </option>
-
-          {studentsList.map(student => (
-            <option
-              key={student.id}
-              value={student.id}
-            >
-              {student.student_identifier}
+          <option value="">All Students</option>
+          {studentsList.map(s => (
+            <option key={s.id} value={s.id}>
+              {s.student_identifier}
             </option>
           ))}
-
         </select>
-
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-
+      <div className="bg-white rounded-lg shadow-sm border">
         {submissionsList.length === 0 ? (
-
-          <p className="p-6 text-gray-500">
-            No submissions yet.
-          </p>
-
+          <p className="p-6 text-gray-500">No submissions yet.</p>
         ) : (
-
           <table className="w-full">
-
             <thead>
-
               <tr className="border-b bg-gray-50">
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  ID
-                </th>
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  Form
-                </th>
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  Student
-                </th>
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  Submitted At
-                </th>
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  Answers
-                </th>
-
-                <th className="text-right p-4 text-sm font-medium text-gray-700">
-                  Actions
-                </th>
-
+                <th className="text-left p-4 text-sm font-medium text-gray-700">ID</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Form</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Student</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Submitted At</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Answers</th>
+                <th className="text-right p-4 text-sm font-medium text-gray-700">Actions</th>
               </tr>
-
             </thead>
 
             <tbody className="divide-y">
-
-              {submissionsList.map(submission => (
-
-                <tr
-                  key={submission.id}
-                  className="hover:bg-gray-50"
-                >
-
-                  <td className="p-4 text-sm">
-                    {submission.id}
-                  </td>
-
-                  <td className="p-4 font-medium">
-                    {getFormName(submission.form_id)}
-                  </td>
-
-                  <td className="p-4">
-                    {getStudentName(submission.student_id)}
-                  </td>
-
+              {submissionsList.map(sub => (
+                <tr key={sub.id} className="hover:bg-gray-50">
+                  <td className="p-4 text-sm">{sub.id}</td>
+                  <td className="p-4 font-medium">{getFormName(sub.form_id)}</td>
+                  <td className="p-4">{getStudentName(sub.student_id)}</td>
                   <td className="p-4 text-sm text-gray-600">
-                    {new Date(
-                      submission.submitted_at
-                    ).toLocaleString()}
+                    {new Date(sub.submitted_at).toLocaleString()}
                   </td>
-
-                  <td className="p-4 text-sm">
-                    {submission.answers?.length || 0}
-                  </td>
+                  <td className="p-4 text-sm">{sub.answers?.length || 0}</td>
 
                   <td className="p-4 text-right space-x-2">
-
+                    {/* 🔵 VIEW BUTTON */}
                     <button
-                      onClick={() =>
-                        handleView(submission.id)
-                      }
+                      onClick={() => handleView(sub.id)}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                     >
                       View
                     </button>
 
+                    {/* 🔴 DELETE BUTTON */}
                     <button
-                      onClick={() =>
-                        handleDelete(submission.id)
-                      }
+                      onClick={() => handleDelete(sub.id)}
                       className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
                     >
                       Delete
                     </button>
-
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
-
           </table>
-
         )}
-
       </div>
 
-      {/* VIEW MODAL */}
+      {/* 🔥 MODAL */}
       {showModal && selectedSubmission && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-[500px] max-h-[80vh] overflow-y-auto shadow-lg">
+            
+            <h3 className="text-lg font-bold mb-4">
+              {selectedSubmission.submission.form_name}
+            </h3>
 
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            {selectedSubmission.answers.map((ans, index) => (
+              <div key={index} className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {ans.label}
+                </label>
 
-          <div className="bg-white rounded-lg p-6 w-[650px] max-h-[85vh] overflow-y-auto shadow-lg">
+                <div className="p-2 bg-gray-100 rounded">
+                  {ans.answer_text ||
+                   ans.answer_number ||
+                   JSON.stringify(ans.answer_json)}
+                </div>
+              </div>
+            ))}
 
-            <div className="flex justify-between items-center mb-6">
-
-              <h3 className="text-xl font-bold">
-                {selectedSubmission.submission.form_name}
-              </h3>
-
+            <div className="text-right mt-4">
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
               >
-                ×
+                Close
               </button>
-
             </div>
 
-            {selectedSubmission.sections.map(
-              (section, sectionIndex) => (
-
-                <div
-                  key={sectionIndex}
-                  className="mb-8"
-                >
-
-                  <h4 className="text-md font-semibold text-gray-800 mb-4 border-b pb-2">
-                    {section.title}
-                  </h4>
-
-                  {section.answers.map((ans, index) => (
-
-                    <div
-                      key={index}
-                      className="mb-4"
-                    >
-
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {ans.label}
-                      </label>
-
-                      <div className="p-3 bg-gray-100 rounded">
-
-                        {/* MATRIX */}
-                        {(
-                          typeof ans.value === 'object' &&
-                          ans.value !== null &&
-                          !Array.isArray(ans.value)
-                        ) && (
-
-                            <div className="space-y-2">
-
-                              {Object.entries(ans.value).map(
-                                ([row, col]) => (
-
-                                  <div
-                                    key={row}
-                                    className="flex justify-between border-b pb-1 text-sm"
-                                  >
-
-                                    <span className="font-medium text-gray-700">
-                                      {row}
-                                    </span>
-
-                                    <span className="text-blue-700 font-medium">
-                                      {String(col)}
-                                    </span>
-
-                                  </div>
-
-                                )
-                              )}
-
-                            </div>
-
-                          )}
-
-                        {/* REPEATABLE GROUP */}
-                        {ans.field_type === 'repeatable_group' && (
-
-                          <div className="space-y-3">
-
-                            {(ans.value || []).map(
-                              (group, idx) => (
-
-                                <div
-                                  key={idx}
-                                  className="border rounded p-3 bg-white"
-                                >
-
-                                  {Object.entries(group).map(
-                                    ([key, value]) => (
-
-                                      <div
-                                        key={key}
-                                        className="flex justify-between text-sm mb-2"
-                                      >
-
-                                        <span className="font-medium text-gray-700">
-                                          {key}
-                                        </span>
-
-                                        <span>
-                                          {String(value)}
-                                        </span>
-
-                                      </div>
-
-                                    )
-                                  )}
-
-                                </div>
-
-                              )
-                            )}
-
-                          </div>
-
-                        )}
-
-                        {/* CHECKBOX / MULTISELECT */}
-                        {[
-                          'checkbox',
-                          'multiselect'
-                        ].includes(ans.field_type) && (
-
-                            <div className="flex flex-wrap gap-2">
-
-                              {(ans.value || []).map(
-                                (item, idx) => (
-
-                                  <span
-                                    key={idx}
-                                    className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
-                                  >
-                                    {item}
-                                  </span>
-
-                                )
-                              )}
-
-                            </div>
-
-                          )}
-
-                        {/* NORMAL VALUES */}
-                        {(
-                          typeof ans.value !== 'object' ||
-                          ans.value === null
-                        ) && (
-
-                            <span>
-                              {String(ans.value || '-')}
-                            </span>
-
-                          )}
-
-                      </div>
-
-                    </div>
-
-                  ))}
-
-                </div>
-
-              )
-            )}
-
           </div>
-
         </div>
-
       )}
-
     </div>
   )
 }
