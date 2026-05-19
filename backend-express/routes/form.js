@@ -6,7 +6,7 @@ const getFormQuery = `
   SELECT f.*,
     (SELECT COUNT(*) FROM form_submission WHERE form_id = f.id)::int as submission_count,
     COALESCE(json_agg(
-      jsonb_build_object(
+      DISTINCT jsonb_build_object(
         'id', s.id,
         'form_id', s.form_id,
         'title', s.title,
@@ -47,16 +47,15 @@ const getFormQuery = `
                 WHERE fmc.field_id = ff.id
               )
             )
-            ORDER BY ff.display_order
           ) FILTER (WHERE ff.id IS NOT NULL), '[]')
           FROM form_field ff
           WHERE ff.section_id = s.id
         )
       )
-      ORDER BY s.display_order
     ) FILTER (WHERE s.id IS NOT NULL), '[]') as sections
   FROM form f
   LEFT JOIN form_section s ON s.form_id = f.id
+  LEFT JOIN form_field ff ON ff.section_id = s.id
   WHERE f.id = $1
   GROUP BY f.id
 `
@@ -217,13 +216,8 @@ router.post('/', async (req, res) => {
           row => !row || !row.trim()
         )
 
-        const validTypes = ['checkbox', 'number', 'text', 'radio']
-
         const emptyColumn = field.matrix_config.columns.some(
-          col => {
-            if (typeof col === 'string') return !col || !col.trim()
-            return !col.label || !col.label.trim() || !validTypes.includes(col.type)
-          }
+          col => !col || !col.trim()
         )
 
         if (emptyRow || emptyColumn) {
@@ -417,7 +411,7 @@ router.get('/', async (req, res) => {
       SELECT f.*,
         (SELECT COUNT(*) FROM form_submission WHERE form_id = f.id)::int as submission_count,
         COALESCE(json_agg(
-          jsonb_build_object(
+          DISTINCT jsonb_build_object(
             'id', s.id,
             'form_id', s.form_id,
             'title', s.title,
@@ -458,16 +452,15 @@ router.get('/', async (req, res) => {
                     WHERE fmc.field_id = ff.id
                   )
                 )
-                ORDER BY ff.display_order
               ) FILTER (WHERE ff.id IS NOT NULL), '[]')
               FROM form_field ff
               WHERE ff.section_id = s.id
             )
           )
-          ORDER BY s.display_order
         ) FILTER (WHERE s.id IS NOT NULL), '[]') as sections
       FROM form f
       LEFT JOIN form_section s ON s.form_id = f.id
+      LEFT JOIN form_field ff ON ff.section_id = s.id
     `
 
     const params = []

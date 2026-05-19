@@ -85,31 +85,6 @@ router.post('/', async (req, res) => {
               `${field.label} matrix requires rows and columns`
             )
           }
-
-          const validTypes = ['checkbox', 'number', 'text', 'radio']
-
-          const emptyColumn = field.matrix_config.columns.some(
-            col => {
-              if (typeof col === 'string') return !col || !col.trim()
-              return !col.label || !col.label.trim() || !validTypes.includes(col.type)
-            }
-          )
-
-          if (emptyColumn) {
-            throw new Error(
-              `${field.label} matrix columns must have a label and valid type (checkbox/number/text/radio)`
-            )
-          }
-
-          const emptyRow = field.matrix_config.rows.some(
-            row => !row || !row.trim()
-          )
-
-          if (emptyRow) {
-            throw new Error(
-              `${field.label} matrix rows cannot be empty`
-            )
-          }
         }
       }
     }
@@ -278,7 +253,6 @@ router.get('/:id', async (req, res) => {
                 WHERE fmc.field_id = ff.id
               )
             )
-            ORDER BY ff.display_order
           ) FILTER (WHERE ff.id IS NOT NULL),
           '[]'
         ) as fields
