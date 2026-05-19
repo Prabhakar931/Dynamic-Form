@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react'
 import { submissions, forms, students } from '../api'
 
 export default function Submissions() {
-
   const [submissionsList, setSubmissions] = useState([])
   const [formsList, setFormsList] = useState([])
   const [studentsList, setStudentsList] = useState([])
-
   const [selectedForm, setSelectedForm] = useState('')
   const [selectedStudent, setSelectedStudent] = useState('')
 
+  // 🔥 NEW STATE
   const [selectedSubmission, setSelectedSubmission] = useState(null)
   const [showModal, setShowModal] = useState(false)
 
@@ -53,6 +52,7 @@ export default function Submissions() {
     }
   }
 
+  // 🔥 VIEW HANDLER
   const handleView = async (id) => {
     try {
       const { data } = await submissions.getById(id)
@@ -164,7 +164,7 @@ export default function Submissions() {
         )}
       </div>
 
-      {/* VIEW MODAL */}
+      {/* 🔥 MODAL */}
       {showModal && selectedSubmission && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-[650px] max-h-[85vh] overflow-y-auto shadow-lg">
@@ -175,9 +175,9 @@ export default function Submissions() {
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
               >
-                ×
+                Close
               </button>
             </div>
 
