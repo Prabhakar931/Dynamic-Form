@@ -6,7 +6,7 @@ const getFormQuery = `
   SELECT f.*,
     (SELECT COUNT(*) FROM form_submission WHERE form_id = f.id)::int as submission_count,
     COALESCE(json_agg(
-      jsonb_build_object(
+      DISTINCT jsonb_build_object(
         'id', s.id,
         'form_id', s.form_id,
         'title', s.title,
@@ -47,16 +47,15 @@ const getFormQuery = `
                 WHERE fmc.field_id = ff.id
               )
             )
-            ORDER BY ff.display_order
           ) FILTER (WHERE ff.id IS NOT NULL), '[]')
           FROM form_field ff
           WHERE ff.section_id = s.id
         )
       )
-      ORDER BY s.display_order
     ) FILTER (WHERE s.id IS NOT NULL), '[]') as sections
   FROM form f
   LEFT JOIN form_section s ON s.form_id = f.id
+  LEFT JOIN form_field ff ON ff.section_id = s.id
   WHERE f.id = $1
   GROUP BY f.id
 `
@@ -217,13 +216,8 @@ router.post('/', async (req, res) => {
           row => !row || !row.trim()
         )
 
-        const validTypes = ['checkbox', 'number', 'text', 'radio']
-
         const emptyColumn = field.matrix_config.columns.some(
-          col => {
-            if (typeof col === 'string') return !col || !col.trim()
-            return !col.label || !col.label.trim() || !validTypes.includes(col.type)
-          }
+          col => !col || !col.trim()
         )
 
         if (emptyRow || emptyColumn) {
@@ -417,7 +411,7 @@ router.get('/', async (req, res) => {
       SELECT f.*,
         (SELECT COUNT(*) FROM form_submission WHERE form_id = f.id)::int as submission_count,
         COALESCE(json_agg(
-          jsonb_build_object(
+          DISTINCT jsonb_build_object(
             'id', s.id,
             'form_id', s.form_id,
             'title', s.title,
@@ -458,16 +452,15 @@ router.get('/', async (req, res) => {
                     WHERE fmc.field_id = ff.id
                   )
                 )
-                ORDER BY ff.display_order
               ) FILTER (WHERE ff.id IS NOT NULL), '[]')
               FROM form_field ff
               WHERE ff.section_id = s.id
             )
           )
-          ORDER BY s.display_order
         ) FILTER (WHERE s.id IS NOT NULL), '[]') as sections
       FROM form f
       LEFT JOIN form_section s ON s.form_id = f.id
+      LEFT JOIN form_field ff ON ff.section_id = s.id
     `
 
     const params = []
@@ -547,94 +540,6 @@ router.get('/:id/submissions', async (req, res) => {
   } catch (err) {
 
     console.error(err)
-
-    res.status(500).json({
-      error: err.message
-    })
-  }
-})
-
-router.get('/:id/submissions', async (req, res) => {
-
-  try {
-
-    const result = await pool.query(
-      `
-      SELECT
-        s.*,
-        f.name AS form_name,
-        COALESCE(
-          (SELECT COUNT(*) FROM form_answer WHERE submission_id = s.id),
-          0
-        )::int AS answer_count
-      FROM form_submission s
-      LEFT JOIN form f
-      ON s.form_id = f.id
-      WHERE s.form_id = $1
-      ORDER BY s.submitted_at DESC
-      `,
-      [req.params.id]
-    )
-
-    res.json(result.rows)
-
-  } catch (err) {
-
-    console.error(err)
-
-// =========================
-// UPDATE FORM
-// =========================
-
-router.put('/:id', async (req, res) => {
-
-  const {
-    name,
-    description,
-    status
-  } = req.body
-
-  try {
-
-    // Check if form has submissions
-    const subCheck = await pool.query(
-      'SELECT COUNT(*)::int as count FROM form_submission WHERE form_id = $1',
-      [req.params.id]
-    )
-
-    if (subCheck.rows[0].count > 0) {
-      return res.status(403).json({
-        error: 'Cannot edit a form that has submissions'
-      })
-    }
-
-    const result = await pool.query(
-      `
-      UPDATE form
-      SET
-        name = COALESCE($1, name),
-        description = COALESCE($2, description),
-        status = COALESCE($3, status)
-      WHERE id = $4
-      RETURNING *
-      `,
-      [
-        name,
-        description,
-        status,
-        req.params.id
-      ]
-    )
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        error: 'Form not found'
-      })
-    }
-
-    res.json(result.rows[0])
-
-  } catch (err) {
 
     res.status(500).json({
       error: err.message

@@ -121,44 +121,6 @@ export default function Forms() {
         </div>
       )
     }
-    if (fieldType === 'matrix') {
-      const rows = Object.keys(value || {})
-      if (rows.length === 0) return <span className="text-gray-400 italic">No answers</span>
-
-      const isNewFormat = typeof value[rows[0]] === 'object' && value[rows[0]] !== null
-      const columns = isNewFormat ? Object.keys(value[rows[0]]) : []
-
-      return (
-        <div className="overflow-x-auto mt-1">
-          <table className="min-w-full border border-gray-300 text-sm">
-            <thead>
-              <tr>
-                <th className="border p-1.5 bg-gray-50 text-left font-medium">Question</th>
-                {(isNewFormat ? columns : ['Answer']).map((col, i) => (
-                  <th key={i} className="border p-1.5 bg-gray-50 text-left font-medium">{col}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, ri) => (
-                <tr key={ri}>
-                  <td className="border p-1.5 font-medium">{row}</td>
-                  {isNewFormat ? (
-                    columns.map((col, ci) => {
-                      const cell = value[row][col]
-                      const display = typeof cell === 'boolean' ? (cell ? 'Yes' : 'No') : (cell ?? '-')
-                      return <td key={ci} className="border p-1.5">{String(display)}</td>
-                    })
-                  ) : (
-                    <td className="border p-1.5">{String(value[row] ?? '-')}</td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    }
     if (typeof value === 'object') {
       return <pre className="text-sm bg-gray-50 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>
     }

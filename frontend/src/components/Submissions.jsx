@@ -14,13 +14,11 @@ export default function Submissions() {
   const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
-
     forms.getAll()
       .then(({ data }) => setFormsList(data))
 
     students.getAll()
       .then(({ data }) => setStudentsList(data))
-
   }, [])
 
   useEffect(() => {
@@ -28,9 +26,7 @@ export default function Submissions() {
   }, [selectedForm, selectedStudent])
 
   const fetchSubmissions = async () => {
-
     try {
-
       const formId = selectedForm || null
       const studentId = selectedStudent || null
 
@@ -38,51 +34,32 @@ export default function Submissions() {
         formId,
         studentId
       )
-
       setSubmissions(data)
-
     } catch (err) {
-
       console.error(err)
     }
   }
 
   const handleDelete = async (id) => {
-
-    const confirmed = window.confirm(
-      'Delete this submission?'
-    )
-
+    const confirmed = window.confirm('Delete this submission?')
     if (!confirmed) return
 
     try {
-
       await submissions.delete(id)
-
       fetchSubmissions()
-
     } catch (err) {
-
       console.error(err)
-
       alert('Failed to delete submission')
     }
   }
 
   const handleView = async (id) => {
-
     try {
-
       const { data } = await submissions.getById(id)
-
       setSelectedSubmission(data)
-
       setShowModal(true)
-
     } catch (err) {
-
       console.error(err)
-
       alert('Failed to load submission')
     }
   }
@@ -91,288 +68,169 @@ export default function Submissions() {
     formsList.find(f => f.id === formId)?.name || 'Unknown'
 
   const getStudentName = (studentId) =>
-    studentsList.find(s => s.id === studentId)
-      ?.student_identifier || 'Unknown'
+    studentsList.find(s => s.id === studentId)?.student_identifier || 'Unknown'
+
+  // Helper function to handle stringified JSON safely
+  const parseMatrixValue = (value) => {
+    if (!value) return {};
+    if (typeof value === 'object' && !Array.isArray(value)) return value;
+
+    try {
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      return typeof parsed === 'object' && parsed !== null ? parsed : {};
+    } catch (e) {
+      console.error("Failed to parse matrix JSON value:", e);
+      return {};
+    }
+  };
 
   return (
     <div>
-
-      <h2 className="text-2xl font-bold mb-6">
-        Submissions
-      </h2>
+      <h2 className="text-2xl font-bold mb-6">Submissions</h2>
 
       {/* FILTERS */}
       <div className="flex gap-4 mb-6">
-
         <select
           value={selectedForm}
-          onChange={(e) =>
-            setSelectedForm(e.target.value)
-          }
+          onChange={(e) => setSelectedForm(e.target.value)}
           className="px-4 py-2 border rounded-lg"
         >
-
-          <option value="">
-            All Forms
-          </option>
-
+          <option value="">All Forms</option>
           {formsList.map(form => (
             <option key={form.id} value={form.id}>
               {form.name}
             </option>
           ))}
-
         </select>
 
         <select
           value={selectedStudent}
-          onChange={(e) =>
-            setSelectedStudent(e.target.value)
-          }
+          onChange={(e) => setSelectedStudent(e.target.value)}
           className="px-4 py-2 border rounded-lg"
         >
-
-          <option value="">
-            All Students
-          </option>
-
+          <option value="">All Students</option>
           {studentsList.map(student => (
-            <option
-              key={student.id}
-              value={student.id}
-            >
+            <option key={student.id} value={student.id}>
               {student.student_identifier}
             </option>
           ))}
-
         </select>
-
       </div>
 
       {/* TABLE */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-
         {submissionsList.length === 0 ? (
-
-          <p className="p-6 text-gray-500">
-            No submissions yet.
-          </p>
-
+          <p className="p-6 text-gray-500">No submissions yet.</p>
         ) : (
-
           <table className="w-full">
-
             <thead>
-
               <tr className="border-b bg-gray-50">
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  ID
-                </th>
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  Form
-                </th>
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  Student
-                </th>
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  Submitted At
-                </th>
-
-                <th className="text-left p-4 text-sm font-medium text-gray-700">
-                  Answers
-                </th>
-
-                <th className="text-right p-4 text-sm font-medium text-gray-700">
-                  Actions
-                </th>
-
+                <th className="text-left p-4 text-sm font-medium text-gray-700">ID</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Form</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Student</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Submitted At</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Answers</th>
+                <th className="text-right p-4 text-sm font-medium text-gray-700">Actions</th>
               </tr>
-
             </thead>
-
             <tbody className="divide-y">
-
               {submissionsList.map(submission => (
-
-                <tr
-                  key={submission.id}
-                  className="hover:bg-gray-50"
-                >
-
-                  <td className="p-4 text-sm">
-                    {submission.id}
-                  </td>
-
-                  <td className="p-4 font-medium">
-                    {getFormName(submission.form_id)}
-                  </td>
-
-                  <td className="p-4">
-                    {getStudentName(submission.student_id)}
-                  </td>
-
+                <tr key={submission.id} className="hover:bg-gray-50">
+                  <td className="p-4 text-sm">{submission.id}</td>
+                  <td className="p-4 font-medium">{getFormName(submission.form_id)}</td>
+                  <td className="p-4">{getStudentName(submission.student_id)}</td>
                   <td className="p-4 text-sm text-gray-600">
-                    {new Date(
-                      submission.submitted_at
-                    ).toLocaleString()}
+                    {new Date(submission.submitted_at).toLocaleString()}
                   </td>
-
-                  <td className="p-4 text-sm">
-                    {submission.answers?.length || 0}
-                  </td>
-
+                  <td className="p-4 text-sm">{submission.answers?.length || 0}</td>
                   <td className="p-4 text-right space-x-2">
-
                     <button
-                      onClick={() =>
-                        handleView(submission.id)
-                      }
+                      onClick={() => handleView(submission.id)}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                     >
                       View
                     </button>
-
                     <button
-                      onClick={() =>
-                        handleDelete(submission.id)
-                      }
+                      onClick={() => handleDelete(submission.id)}
                       className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
                     >
                       Delete
                     </button>
-
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
-
           </table>
-
         )}
-
       </div>
 
       {/* VIEW MODAL */}
       {showModal && selectedSubmission && (
-
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-
           <div className="bg-white rounded-lg p-6 w-[650px] max-h-[85vh] overflow-y-auto shadow-lg">
 
             <div className="flex justify-between items-center mb-6">
-
               <h3 className="text-xl font-bold">
-                {selectedSubmission.submission.form_name}
+                {selectedSubmission.submission?.form_name || "Form Submission"}
               </h3>
-
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-xl"
               >
                 ×
               </button>
-
             </div>
 
-            {selectedSubmission.sections.map(
-              (section, sectionIndex) => (
+            {selectedSubmission.sections?.map((section, sectionIndex) => (
+              <div key={sectionIndex} className="mb-8">
+                <h4 className="text-md font-semibold text-gray-800 mb-4 border-b pb-2">
+                  {section.title}
+                </h4>
 
-                <div
-                  key={sectionIndex}
-                  className="mb-8"
-                >
+                {section.answers?.map((ans, index) => (
+                  <div key={index} className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {ans.label}
+                    </label>
+                    <div className="text-red-500 text-xs mb-1">
+                      TYPE: {ans.field_type}
+                    </div>
 
-                  <h4 className="text-md font-semibold text-gray-800 mb-4 border-b pb-2">
-                    {section.title}
-                  </h4>
+                    <div className="p-3 bg-gray-100 rounded">
 
-                  {section.answers.map((ans, index) => (
+                      {/* MATRIX */}
+                      {ans.field_type?.trim()?.toLowerCase() === 'matrix' ? (() => {
 
-                    <div
-                      key={index}
-                      className="mb-4"
-                    >
+                        let matrixValue = ans.value
 
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {ans.label}
-                      </label>
+                        // convert JSON string to object
+                        if (typeof matrixValue === 'string') {
+                          try {
+                            matrixValue = JSON.parse(matrixValue)
+                          } catch (e) {
+                            console.error('Invalid matrix JSON', e)
+                            matrixValue = {}
+                          }
+                        }
 
-                      <div className="p-3 bg-gray-100 rounded">
+                        return (
+                          <div className="space-y-2">
 
-                        {/* MATRIX */}
-                        {(
-                          typeof ans.value === 'object' &&
-                          ans.value !== null &&
-                          !Array.isArray(ans.value)
-                        ) && (
-
-                            <div className="space-y-2">
-
-                              {Object.entries(ans.value).map(
-                                ([row, col]) => (
-
-                                  <div
-                                    key={row}
-                                    className="flex justify-between border-b pb-1 text-sm"
-                                  >
-
-                                    <span className="font-medium text-gray-700">
-                                      {row}
-                                    </span>
-
-                                    <span className="text-blue-700 font-medium">
-                                      {String(col)}
-                                    </span>
-
-                                  </div>
-
-                                )
-                              )}
-
-                            </div>
-
-                          )}
-
-                        {/* REPEATABLE GROUP */}
-                        {ans.field_type === 'repeatable_group' && (
-
-                          <div className="space-y-3">
-
-                            {(ans.value || []).map(
-                              (group, idx) => (
+                            {Object.entries(matrixValue || {}).map(
+                              ([row, col]) => (
 
                                 <div
-                                  key={idx}
-                                  className="border rounded p-3 bg-white"
+                                  key={row}
+                                  className="flex justify-between border-b pb-1 text-sm"
                                 >
 
-                                  {Object.entries(group).map(
-                                    ([key, value]) => (
+                                  <span className="font-medium text-gray-700">
+                                    {row}
+                                  </span>
 
-                                      <div
-                                        key={key}
-                                        className="flex justify-between text-sm mb-2"
-                                      >
-
-                                        <span className="font-medium text-gray-700">
-                                          {key}
-                                        </span>
-
-                                        <span>
-                                          {String(value)}
-                                        </span>
-
-                                      </div>
-
-                                    )
-                                  )}
+                                  <span className="text-blue-700 font-medium">
+                                    {String(col)}
+                                  </span>
 
                                 </div>
 
@@ -380,63 +238,44 @@ export default function Submissions() {
                             )}
 
                           </div>
+                        )
 
-                        )}
-
-                        {/* CHECKBOX / MULTISELECT */}
-                        {[
-                          'checkbox',
-                          'multiselect'
-                        ].includes(ans.field_type) && (
-
-                            <div className="flex flex-wrap gap-2">
-
-                              {(ans.value || []).map(
-                                (item, idx) => (
-
-                                  <span
-                                    key={idx}
-                                    className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
-                                  >
-                                    {item}
-                                  </span>
-
-                                )
-                              )}
-
+                      })() : ans.field_type === 'repeatable_group' ? (
+                        <div className="space-y-3">
+                          {(ans.value || []).map((group, idx) => (
+                            <div key={idx} className="border rounded p-3 bg-white">
+                              {Object.entries(group || {}).map(([key, value]) => (
+                                <div key={key} className="flex justify-between text-sm mb-2">
+                                  <span className="font-medium text-gray-700">{key}</span>
+                                  <span>{String(value)}</span>
+                                </div>
+                              ))}
                             </div>
-
-                          )}
-
-                        {/* NORMAL VALUES */}
-                        {(
-                          typeof ans.value !== 'object' ||
-                          ans.value === null
-                        ) && (
-
-                            <span>
-                              {String(ans.value || '-')}
+                          ))}
+                        </div>
+                      ) : ['checkbox', 'multiselect'].includes(ans.field_type?.trim()?.toLowerCase()) ? (
+                        <div className="flex flex-wrap gap-2">
+                          {(Array.isArray(ans.value) ? ans.value : []).map((item, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
+                            >
+                              {item}
                             </span>
-
-                          )}
-
-                      </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span>{String(ans.value || '-')}</span>
+                      )}
 
                     </div>
-
-                  ))}
-
-                </div>
-
-              )
-            )}
-
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
-
         </div>
-
       )}
-
     </div>
   )
 }
