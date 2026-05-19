@@ -554,36 +554,36 @@ router.get('/:id/submissions', async (req, res) => {
 router.put('/:id', async (req, res) => {
 
   const {
-    organisation_id,
     name,
     description,
-    status,
-    sections
+    status
   } = req.body
-
-  const client = await pool.connect()
 
   try {
 
-    await client.query('BEGIN')
+    // Check if form has submissions
+    const subCheck = await pool.query(
+      'SELECT COUNT(*)::int as count FROM form_submission WHERE form_id = $1',
+      [req.params.id]
+    )
 
-    // =========================
-    // UPDATE FORM
-    // =========================
+    if (subCheck.rows[0].count > 0) {
+      return res.status(403).json({
+        error: 'Cannot edit a form that has submissions'
+      })
+    }
 
-    const formResult = await client.query(
+    const result = await pool.query(
       `
       UPDATE form
       SET
-        organisation_id = $1,
-        name = $2,
-        description = $3,
-        status = $4
-      WHERE id = $5
+        name = COALESCE($1, name),
+        description = COALESCE($2, description),
+        status = COALESCE($3, status)
+      WHERE id = $4
       RETURNING *
       `,
       [
-        organisation_id,
         name,
         description,
         status,
@@ -591,207 +591,19 @@ router.put('/:id', async (req, res) => {
       ]
     )
 
-    if (formResult.rows.length === 0) {
-
-      await client.query('ROLLBACK')
-
+    if (result.rows.length === 0) {
       return res.status(404).json({
         error: 'Form not found'
       })
     }
 
-    // =========================
-    // DELETE OLD DATA
-    // =========================
-
-    // Delete matrix configs
-    await client.query(`
-      DELETE FROM field_matrix_config
-      WHERE field_id IN (
-        SELECT id FROM form_field
-        WHERE section_id IN (
-          SELECT id FROM form_section
-          WHERE form_id = $1
-        )
-      )
-    `, [req.params.id])
-
-    // Delete field options
-    await client.query(`
-      DELETE FROM field_option
-      WHERE field_id IN (
-        SELECT id FROM form_field
-        WHERE section_id IN (
-          SELECT id FROM form_section
-          WHERE form_id = $1
-        )
-      )
-    `, [req.params.id])
-
-    // Delete fields
-    await client.query(`
-      DELETE FROM form_field
-      WHERE section_id IN (
-        SELECT id FROM form_section
-        WHERE form_id = $1
-      )
-    `, [req.params.id])
-
-    // Delete sections
-    await client.query(`
-      DELETE FROM form_section
-      WHERE form_id = $1
-    `, [req.params.id])
-
-    // =========================
-    // RECREATE SECTIONS
-    // =========================
-
-    for (const sectionData of sections || []) {
-
-      const sectionResult = await client.query(
-        `
-        INSERT INTO form_section
-        (
-          form_id,
-          title,
-          description,
-          display_order
-        )
-        VALUES ($1, $2, $3, $4)
-        RETURNING *
-        `,
-        [
-          req.params.id,
-          sectionData.title,
-          sectionData.description || null,
-          sectionData.display_order || 0
-        ]
-      )
-
-      const section = sectionResult.rows[0]
-
-      // =========================
-      // CREATE FIELDS
-      // =========================
-
-      for (const fieldData of sectionData.fields || []) {
-
-        const fieldResult = await client.query(
-          `
-          INSERT INTO form_field
-          (
-            section_id,
-            label,
-            field_key,
-            field_type,
-            is_required,
-            display_order,
-            field_config
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
-          RETURNING *
-          `,
-          [
-            section.id,
-            fieldData.label,
-            fieldData.field_key,
-            fieldData.field_type,
-            fieldData.is_required || false,
-            fieldData.display_order || 0,
-            fieldData.field_config || {}
-          ]
-        )
-
-        const field = fieldResult.rows[0]
-
-        // =========================
-        // CREATE OPTIONS
-        // =========================
-
-        if (
-          fieldData.options &&
-          fieldData.options.length > 0
-        ) {
-
-          for (const option of fieldData.options) {
-
-            await client.query(
-              `
-              INSERT INTO field_option
-              (
-                field_id,
-                value,
-                label,
-                display_order
-              )
-              VALUES ($1, $2, $3, $4)
-              `,
-              [
-                field.id,
-                option.value,
-                option.label,
-                option.display_order || 0
-              ]
-            )
-          }
-        }
-
-        // =========================
-        // CREATE MATRIX CONFIG
-        // =========================
-
-        if (
-          fieldData.field_type === 'matrix' &&
-          fieldData.matrix_config
-        ) {
-
-          await client.query(
-            `
-            INSERT INTO field_matrix_config
-            (
-              field_id,
-              rows,
-              columns
-            )
-            VALUES ($1, $2, $3)
-            `,
-            [
-              field.id,
-              JSON.stringify(fieldData.matrix_config.rows || []),
-              JSON.stringify(fieldData.matrix_config.columns || [])
-            ]
-          )
-        }
-      }
-    }
-
-    await client.query('COMMIT')
-
-    // =========================
-    // RETURN UPDATED FORM
-    // =========================
-
-    const updatedForm = await client.query(
-      getFormQuery,
-      [req.params.id]
-    )
-
-    res.json(updatedForm.rows[0])
+    res.json(result.rows[0])
 
   } catch (err) {
-
-    await client.query('ROLLBACK')
-
-    console.error(err)
 
     res.status(500).json({
       error: err.message
     })
-
-  } finally {
-
-    client.release()
   }
 })
 
