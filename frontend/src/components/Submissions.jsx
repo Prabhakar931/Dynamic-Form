@@ -13,11 +13,8 @@ export default function Submissions() {
   const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
-    forms.getAll()
-      .then(({ data }) => setFormsList(data))
-
-    students.getAll()
-      .then(({ data }) => setStudentsList(data))
+    forms.getAll().then(({ data }) => setFormsList(data))
+    students.getAll().then(({ data }) => setStudentsList(data))
   }, [])
 
   useEffect(() => {
@@ -25,30 +22,16 @@ export default function Submissions() {
   }, [selectedForm, selectedStudent])
 
   const fetchSubmissions = async () => {
-    try {
-      const formId = selectedForm || null
-      const studentId = selectedStudent || null
-
-      const { data } = await submissions.getAll(
-        formId,
-        studentId
-      )
-      setSubmissions(data)
-    } catch (err) {
-      console.error(err)
-    }
+    const formId = selectedForm || null
+    const studentId = selectedStudent || null
+    const { data } = await submissions.getAll(formId, studentId)
+    setSubmissions(data)
   }
 
   const handleDelete = async (id) => {
-    const confirmed = window.confirm('Delete this submission?')
-    if (!confirmed) return
-
-    try {
+    if (confirm('Delete this submission?')) {
       await submissions.delete(id)
       fetchSubmissions()
-    } catch (err) {
-      console.error(err)
-      alert('Failed to delete submission')
     }
   }
 
@@ -60,7 +43,6 @@ export default function Submissions() {
       setShowModal(true)
     } catch (err) {
       console.error(err)
-      alert('Failed to load submission')
     }
   }
 
@@ -70,25 +52,10 @@ export default function Submissions() {
   const getStudentName = (studentId) =>
     studentsList.find(s => s.id === studentId)?.student_identifier || 'Unknown'
 
-  // Helper function to handle stringified JSON safely
-  const parseMatrixValue = (value) => {
-    if (!value) return {};
-    if (typeof value === 'object' && !Array.isArray(value)) return value;
-
-    try {
-      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-      return typeof parsed === 'object' && parsed !== null ? parsed : {};
-    } catch (e) {
-      console.error("Failed to parse matrix JSON value:", e);
-      return {};
-    }
-  };
-
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Submissions</h2>
 
-      {/* FILTERS */}
       <div className="flex gap-4 mb-6">
         <select
           value={selectedForm}
@@ -96,9 +63,9 @@ export default function Submissions() {
           className="px-4 py-2 border rounded-lg"
         >
           <option value="">All Forms</option>
-          {formsList.map(form => (
-            <option key={form.id} value={form.id}>
-              {form.name}
+          {formsList.map(f => (
+            <option key={f.id} value={f.id}>
+              {f.name}
             </option>
           ))}
         </select>
@@ -109,16 +76,15 @@ export default function Submissions() {
           className="px-4 py-2 border rounded-lg"
         >
           <option value="">All Students</option>
-          {studentsList.map(student => (
-            <option key={student.id} value={student.id}>
-              {student.student_identifier}
+          {studentsList.map(s => (
+            <option key={s.id} value={s.id}>
+              {s.student_identifier}
             </option>
           ))}
         </select>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border">
         {submissionsList.length === 0 ? (
           <p className="p-6 text-gray-500">No submissions yet.</p>
         ) : (
@@ -133,25 +99,30 @@ export default function Submissions() {
                 <th className="text-right p-4 text-sm font-medium text-gray-700">Actions</th>
               </tr>
             </thead>
+
             <tbody className="divide-y">
-              {submissionsList.map(submission => (
-                <tr key={submission.id} className="hover:bg-gray-50">
-                  <td className="p-4 text-sm">{submission.id}</td>
-                  <td className="p-4 font-medium">{getFormName(submission.form_id)}</td>
-                  <td className="p-4">{getStudentName(submission.student_id)}</td>
+              {submissionsList.map(sub => (
+                <tr key={sub.id} className="hover:bg-gray-50">
+                  <td className="p-4 text-sm">{sub.id}</td>
+                  <td className="p-4 font-medium">{getFormName(sub.form_id)}</td>
+                  <td className="p-4">{getStudentName(sub.student_id)}</td>
                   <td className="p-4 text-sm text-gray-600">
-                    {new Date(submission.submitted_at).toLocaleString()}
+                    {new Date(sub.submitted_at).toLocaleString()}
                   </td>
-                  <td className="p-4 text-sm">{submission.answers?.length || 0}</td>
+                  <td className="p-4 text-sm">{sub.answers?.length || 0}</td>
+
                   <td className="p-4 text-right space-x-2">
+                    {/* 🔵 VIEW BUTTON */}
                     <button
-                      onClick={() => handleView(submission.id)}
+                      onClick={() => handleView(sub.id)}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                     >
                       View
                     </button>
+
+                    {/* 🔴 DELETE BUTTON */}
                     <button
-                      onClick={() => handleDelete(submission.id)}
+                      onClick={() => handleDelete(sub.id)}
                       className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
                     >
                       Delete
@@ -166,111 +137,123 @@ export default function Submissions() {
 
       {/* 🔥 MODAL */}
       {showModal && selectedSubmission && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-[650px] max-h-[85vh] overflow-y-auto shadow-lg">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+          <div className="bg-white rounded-xl p-6 w-[700px] max-h-[85vh] overflow-y-auto shadow-xl">
 
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold">
-                {selectedSubmission.submission?.form_name || "Form Submission"}
+                {selectedSubmission.submission.form_name}
               </h3>
+
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                className="text-gray-500 hover:text-black text-xl"
               >
-                Close
+                ×
               </button>
             </div>
 
-            {selectedSubmission.sections?.map((section, sectionIndex) => (
-              <div key={sectionIndex} className="mb-8">
-                <h4 className="text-md font-semibold text-gray-800 mb-4 border-b pb-2">
-                  {section.title}
-                </h4>
+            {selectedSubmission.sections.map((section, sectionIdx) => (
 
-                {section.answers?.map((ans, index) => (
-                  <div key={index} className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {ans.label}
-                    </label>
-                    <div className="text-red-500 text-xs mb-1">
-                      TYPE: {ans.field_type}
-                    </div>
+              <div
+                key={sectionIdx}
+                className="mb-8 border rounded-lg overflow-hidden"
+              >
 
-                    <div className="p-3 bg-gray-100 rounded">
+                <div className="bg-gray-100 px-4 py-3 border-b">
+                  <h4 className="font-semibold text-lg">
+                    {section.title}
+                  </h4>
+                </div>
 
-                      {/* MATRIX */}
-                      {ans.field_type?.trim()?.toLowerCase() === 'matrix' ? (() => {
+                <div className="p-4 space-y-4">
 
-                        let matrixValue = ans.value
+                  {section.answers.map((ans, index) => (
 
-                        // convert JSON string to object
-                        if (typeof matrixValue === 'string') {
-                          try {
-                            matrixValue = JSON.parse(matrixValue)
-                          } catch (e) {
-                            console.error('Invalid matrix JSON', e)
-                            matrixValue = {}
-                          }
-                        }
+                    <div
+                      key={index}
+                      className="border rounded-lg p-4 bg-gray-50"
+                    >
 
-                        return (
-                          <div className="space-y-2">
+                      <div className="font-medium text-gray-800 mb-2">
+                        {ans.label}
+                      </div>
 
-                            {Object.entries(matrixValue || {}).map(
-                              ([row, col]) => (
+                      {/* 🔥 REPEATABLE GROUP */}
+                      {ans.field_type === 'repeatable_group' &&
+                        Array.isArray(ans.answer_json) ? (
 
-                                <div
-                                  key={row}
-                                  className="flex justify-between border-b pb-1 text-sm"
-                                >
+                        <div className="space-y-4">
 
-                                  <span className="font-medium text-gray-700">
-                                    {row}
-                                  </span>
+                          {ans.answer_json.map((item, itemIndex) => (
 
-                                  <span className="text-blue-700 font-medium">
-                                    {String(col)}
-                                  </span>
+                            <div
+                              key={itemIndex}
+                              className="bg-white border rounded-lg p-4"
+                            >
 
-                                </div>
+                              <div className="font-semibold text-blue-700 mb-3">
+                                Person {itemIndex + 1}
+                              </div>
 
-                              )
-                            )}
+                              <div className="space-y-2">
 
-                          </div>
-                        )
+                                {Object.entries(item).map(([key, value]) => (
 
-                      })() : ans.field_type === 'repeatable_group' ? (
-                        <div className="space-y-3">
-                          {(ans.value || []).map((group, idx) => (
-                            <div key={idx} className="border rounded p-3 bg-white">
-                              {Object.entries(group || {}).map(([key, value]) => (
-                                <div key={key} className="flex justify-between text-sm mb-2">
-                                  <span className="font-medium text-gray-700">{key}</span>
-                                  <span>{String(value)}</span>
-                                </div>
-                              ))}
+                                  <div
+                                    key={key}
+                                    className="grid grid-cols-[140px_1fr] gap-2"
+                                  >
+
+                                    <div className="font-medium text-gray-600 capitalize">
+                                      {key.replace(/_/g, ' ')}
+                                    </div>
+
+                                    <div className="text-gray-900">
+                                      {String(value)}
+                                    </div>
+
+                                  </div>
+                                ))}
+
+                              </div>
                             </div>
                           ))}
+
                         </div>
-                      ) : ['checkbox', 'multiselect'].includes(ans.field_type?.trim()?.toLowerCase()) ? (
+
+                      ) : Array.isArray(ans.answer_json) ? (
+
                         <div className="flex flex-wrap gap-2">
-                          {(Array.isArray(ans.value) ? ans.value : []).map((item, idx) => (
+                          {ans.answer_json.map((v, i) => (
                             <span
-                              key={idx}
+                              key={i}
                               className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
                             >
-                              {item}
+                              {v}
                             </span>
                           ))}
                         </div>
-                      ) : (
-                        <span>{String(ans.value || '-')}</span>
-                      )}
 
+                      ) : typeof ans.answer_json === 'object' &&
+                        ans.answer_json !== null ? (
+
+                        <pre className="bg-white p-3 rounded border text-sm overflow-auto">
+                          {JSON.stringify(ans.answer_json, null, 2)}
+                        </pre>
+
+                      ) : (
+
+                        <div className="text-gray-800">
+                          {String(ans.answer_json ?? '')}
+                        </div>
+
+                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
+
+                </div>
               </div>
             ))}
           </div>

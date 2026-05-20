@@ -58,9 +58,6 @@ function SectionBuilder({
           matrix_config: {
             rows: [],
             columns: []
-          },
-          repeatable_config: {
-            fields: []
           }
         }
       ]
@@ -215,16 +212,11 @@ function SectionBuilder({
 
     const newCols = [
       ...(field.matrix_config?.columns || []),
-<<<<<<< Updated upstream
-      ''
-      //{ label: '', type: 'text', required: false }
-=======
       {
         label: '',
         type: 'text',
         required: false
       }
->>>>>>> Stashed changes
     ]
 
     updateField(fieldIdx, {
@@ -235,13 +227,6 @@ function SectionBuilder({
     })
   }
 
-<<<<<<< Updated upstream
-  const updateMatrixColumn = (fieldIdx, idx, value) => {
-    const field = section.fields[fieldIdx]
-
-    const newCols = [...(field.matrix_config?.columns || [])]
-    newCols[idx] = value
-=======
   const updateMatrixColumn = (
     fieldIdx,
     idx,
@@ -258,7 +243,6 @@ function SectionBuilder({
       ...newCols[idx],
       ...patch
     }
->>>>>>> Stashed changes
 
     updateField(fieldIdx, {
       matrix_config: {
@@ -506,23 +490,6 @@ function SectionBuilder({
 
                 <label className="flex items-center gap-2">
 
-<<<<<<< Updated upstream
-              <label className="flex items-center gap-2 px-3 py-2">
-                <input
-                  type="checkbox"
-                  checked={field.is_required}
-                  onChange={(e) =>
-                    updateField(fieldIdx, {
-                      is_required: e.target.checked
-                    })
-                  }
-                />
-
-                <span className="text-sm">
-                  Required
-                </span>
-              </label>
-=======
                   <input
                     type="checkbox"
                     checked={
@@ -558,7 +525,6 @@ function SectionBuilder({
                   className="px-3 py-2 border rounded"
                 />
               </div>
->>>>>>> Stashed changes
 
               {/* OPTIONS */}
 
@@ -643,112 +609,6 @@ function SectionBuilder({
                           ×
                         </button>
                       </div>
-<<<<<<< Updated upstream
-                    ))}
-                    {field.field_type === 'repeatable_group' && (
-
-                      <div className="mt-3 border-t pt-3">
-
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-sm font-medium">
-                            Repeatable Fields
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-
-                              const existing =
-                                field.repeatable_config?.fields || []
-
-                              updateField(fieldIdx, {
-                                repeatable_config: {
-                                  fields: [
-                                    ...existing,
-                                    {
-                                      label: '',
-                                      field_key: '',
-                                      field_type: 'text',
-                                      is_required: false,
-                                      display_order: existing.length + 1,
-                                      field_config: {},
-                                      options: []
-                                    }
-                                  ]
-                                }
-                              })
-                            }}
-                            className="text-sm text-blue-600 hover:text-blue-800"
-                          >
-                            + Add Item
-                          </button>
-                        </div>
-
-                        {(field.repeatable_config?.fields || []).map(
-                          (subField, subIdx) => (
-
-                            <div
-                              key={subIdx}
-                              className="border rounded p-3 mb-3 bg-gray-50"
-                            >
-                             
-
-                              <input
-                                type="text"
-                                value={item.label}
-                                onChange={(e) => {
-
-                                  const updatedFields = [
-                                    ...(field.repeatable_config?.fields || [])
-                                  ]
-
-                                  updatedFields[idx].label =
-                                    e.target.value
-
-                                  updatedFields[idx].key =
-                                    e.target.value
-                                      .toLowerCase()
-                                      .replace(/[^a-z0-9]+/g, '_')
-                                      .replace(/^_|_$/g, '')
-
-                                  updateField(fieldIdx, {
-                                    repeatable_config: {
-                                      fields: updatedFields
-                                    }
-                                  })
-                                }}
-                                placeholder="Field Label"
-                                className="flex-1 px-3 py-1 border rounded text-sm"
-                              />
-
-                              <button
-                                type="button"
-                                onClick={() => {
-
-                                  const updatedFields =
-                                    (field.repeatable_config?.fields || [])
-                                      .filter((_, i) => i !== idx)
-
-                                  updateField(fieldIdx, {
-                                    repeatable_config: {
-                                      fields: updatedFields
-                                    }
-                                  })
-                                }}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                &times;
-                              </button>
-
-                            </div>
-
-                          )
-                        )}
-
-                      </div>
-
-                    )}
-=======
                     )
                   )}
                 </div>
@@ -778,7 +638,6 @@ function SectionBuilder({
                     >
                       + Add Sub Field
                     </button>
->>>>>>> Stashed changes
                   </div>
 
                   {(field.field_config
@@ -793,33 +652,6 @@ function SectionBuilder({
                         className="border rounded p-3 mb-3"
                       >
 
-<<<<<<< Updated upstream
-                    {(field.matrix_config?.columns || []).map((col, idx) => (
-
-                      <div key={idx} className="flex gap-2 mb-2">
-
-                        <input
-                          type="text"
-                          value={col}
-                          onChange={(e) =>
-                            updateMatrixColumn(fieldIdx, idx, e.target.value)
-                          }
-                          placeholder="Column value"
-                          className="flex-1 px-3 py-1 border rounded text-sm"
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() => removeMatrixColumn(fieldIdx, idx)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          &times;
-                        </button>
-
-                      </div>
-                    ))}
-                  </div>
-=======
                         <div className="grid grid-cols-2 gap-3 mb-2">
 
                           <input
@@ -957,7 +789,6 @@ function SectionBuilder({
                       </div>
                     )
                   )}
->>>>>>> Stashed changes
                 </div>
               )}
             </div>
@@ -1062,106 +893,6 @@ export default function FormBuilder() {
 
     e.preventDefault()
 
-<<<<<<< Updated upstream
-    // SECTION VALIDATION
-    if (formData.sections.length === 0) {
-      alert('Please add at least one section')
-      return
-    }
-
-    // FIELD VALIDATION
-    const totalFields = formData.sections.reduce(
-      (count, section) => count + section.fields.length,
-      0
-    )
-
-    if (totalFields === 0) {
-      alert('Form must contain at least one field')
-      return
-    }
-
-    const optionFieldTypes = [
-      'dropdown',
-      'checkbox',
-      'multiselect',
-      'radio'
-    ]
-
-    for (const section of formData.sections) {
-
-      for (const field of section.fields) {
-
-        if (!field.label.trim()) {
-          alert('Every field must have a label')
-          return
-        }
-
-        if (!field.field_key.trim()) {
-          alert(`Field key missing for "${field.label}"`)
-          return
-        }
-
-        // OPTION VALIDATION
-        if (optionFieldTypes.includes(field.field_type)) {
-
-          if (!field.options || field.options.length === 0) {
-            alert(`${field.label} requires at least one option`)
-            return
-          }
-
-          const invalidOption = field.options.some(
-            opt => !opt.value.trim() || !opt.label.trim()
-          )
-
-          if (invalidOption) {
-            alert(`All options in "${field.label}" must have value and label`)
-            return
-          }
-        }
-
-        // MATRIX VALIDATION
-        if (field.field_type === 'matrix') {
-
-          const rows = field.matrix_config?.rows || []
-          const columns = field.matrix_config?.columns || []
-
-          if (rows.length === 0 || columns.length === 0) {
-            alert(`${field.label} matrix must contain rows and columns`)
-            return
-          }
-
-          if (
-            rows.some(r => !r.trim()) ||
-            columns.some(c => !c.trim())
-          ) {
-            alert(`${field.label} matrix rows/columns cannot be empty`)
-            return
-          }
-        }
-      }
-    }
-
-    // DUPLICATE FIELD KEY CHECK
-    const allKeys = formData.sections.flatMap(section =>
-      section.fields.map(field => field.field_key.trim())
-    )
-
-    const duplicateKeys = allKeys.filter(
-      (key, idx) => allKeys.indexOf(key) !== idx
-    )
-
-    if (duplicateKeys.length > 0) {
-      alert(`Duplicate field key found: ${duplicateKeys[0]}`)
-      return
-    }
-
-    const data = {
-      ...formData,
-      organisation_id: parseInt(formData.organisation_id),
-    }
-
-=======
->>>>>>> Stashed changes
     try {
 
       const payload = {
@@ -1179,11 +910,7 @@ export default function FormBuilder() {
 
       } else {
 
-<<<<<<< Updated upstream
-        await forms.create(data)
-=======
         await forms.create(payload)
->>>>>>> Stashed changes
 
         alert('Form created!')
       }
