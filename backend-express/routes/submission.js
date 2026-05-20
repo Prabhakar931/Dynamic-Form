@@ -226,7 +226,16 @@ router.get('/:id', async (req, res) => {
           )
           FROM field_option fo
           WHERE fo.field_id = ff.id
-        ) as options
+        ) as options,
+
+        (
+          SELECT jsonb_build_object(
+            'rows', fmc.rows,
+            'columns', fmc.columns
+          )
+          FROM field_matrix_config fmc
+          WHERE fmc.field_id = ff.id
+        ) as matrix_config
 
       FROM form_answer fa
 
@@ -304,7 +313,8 @@ router.get('/:id', async (req, res) => {
       sectionMap[row.section_id].answers.push({
         label: row.label,
         field_type: row.field_type,
-        value
+        value,
+        matrix_config: row.matrix_config
       })
     }
 

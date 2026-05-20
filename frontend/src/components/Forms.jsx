@@ -106,7 +106,7 @@ export default function Forms() {
     })
   }
 
-  const renderValue = (value, fieldType) => {
+  const renderValue = (value, fieldType, matrixConfig) => {
     if (value === null || value === undefined || value === '') return <span className="text-gray-400 italic">No answer</span>
     if (fieldType === 'checkbox' || fieldType === 'multiselect') {
       const items = Array.isArray(value) ? value : []
@@ -122,11 +122,27 @@ export default function Forms() {
       )
     }
     if (fieldType === 'matrix') {
-      const rows = Object.keys(value || {})
+      const rows = matrixConfig?.rows?.length
+        ? matrixConfig.rows
+        : Object.keys(value || {})
+
+      const columns = matrixConfig?.columns?.length
+        ? matrixConfig.columns.map(c => typeof c === 'string' ? c : c.label)
+        : rows.length > 0 && typeof value[rows[0]] === 'object' && value[rows[0]] !== null
+          ? [...new Set(rows.flatMap(r => Object.keys(value[r] || {})))]
+          : ['Answer']
+
       if (rows.length === 0) return <span className="text-gray-400 italic">No answers</span>
 
-      const isNewFormat = typeof value[rows[0]] === 'object' && value[rows[0]] !== null
-      const columns = isNewFormat ? Object.keys(value[rows[0]]) : []
+      const colTypes = matrixConfig?.columns?.length
+        ? Object.fromEntries(
+            matrixConfig.columns.map(c =>
+              typeof c === 'string' ? [c, 'radio'] : [c.label, c.type || 'radio']
+            )
+          )
+        : {}
+
+      const isNewFormat = columns.length > 1 || (columns.length === 1 && columns[0] !== 'Answer')
 
       return (
         <div className="overflow-x-auto mt-1">
@@ -134,7 +150,7 @@ export default function Forms() {
             <thead>
               <tr>
                 <th className="border p-1.5 bg-gray-50 text-left font-medium">Question</th>
-                {(isNewFormat ? columns : ['Answer']).map((col, i) => (
+                {columns.map((col, i) => (
                   <th key={i} className="border p-1.5 bg-gray-50 text-left font-medium">{col}</th>
                 ))}
               </tr>
@@ -145,12 +161,16 @@ export default function Forms() {
                   <td className="border p-1.5 font-medium">{row}</td>
                   {isNewFormat ? (
                     columns.map((col, ci) => {
-                      const cell = value[row][col]
-                      const display = typeof cell === 'boolean' ? (cell ? 'Yes' : 'No') : (cell ?? '-')
+                      const cell = value?.[row]?.[col]
+                      const display = cell === undefined && colTypes[col] === 'checkbox'
+                        ? 'No'
+                        : typeof cell === 'boolean'
+                          ? (cell ? 'Yes' : 'No')
+                          : (cell ?? '-')
                       return <td key={ci} className="border p-1.5">{String(display)}</td>
                     })
                   ) : (
-                    <td className="border p-1.5">{String(value[row] ?? '-')}</td>
+                    <td className="border p-1.5">{String(value?.[row] ?? '-')}</td>
                   )}
                 </tr>
               ))}
@@ -419,7 +439,7 @@ export default function Forms() {
                           <div key={aidx} className="px-5 py-4">
                             <p className="text-sm font-medium text-gray-600">{answer.label}</p>
                             <div className="mt-1 text-gray-900">
-                              {renderValue(answer.value, answer.field_type)}
+                              {renderValue(answer.value, answer.field_type, answer.matrix_config)}
                             </div>
                           </div>
                         ))}
