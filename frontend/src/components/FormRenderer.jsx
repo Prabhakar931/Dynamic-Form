@@ -204,8 +204,13 @@ function FieldRenderer({ field, value, onChange }) {
               type="button"
               onClick={() => onChange(String(n))}
               className={`w-10 h-10 rounded-full border-2 ${parseInt(value) === n
+<<<<<<< Updated upstream
                   ? 'bg-yellow-400 border-yellow-500'
                   : 'border-gray-300 hover:border-yellow-400'
+=======
+                ? 'bg-yellow-400 border-yellow-500'
+                : 'border-gray-300 hover:border-yellow-400'
+>>>>>>> Stashed changes
                 } flex items-center justify-center font-bold`}
             >
               {n}
@@ -273,6 +278,12 @@ function FieldRenderer({ field, value, onChange }) {
       )
 
     case 'repeatable_group':
+
+      const repeatableFields =
+        field.children ||
+        field.field_config?.fields ||
+        []
+
       return (
         <div className="space-y-4">
 
@@ -282,6 +293,7 @@ function FieldRenderer({ field, value, onChange }) {
               key={index}
               className="border rounded-lg p-4 bg-gray-50"
             >
+
               <div className="flex justify-between items-center mb-4">
 
                 <h4 className="font-medium">
@@ -306,7 +318,11 @@ function FieldRenderer({ field, value, onChange }) {
 
               <div className="space-y-4">
 
+<<<<<<< Updated upstream
                 {(field.repeatable_config?.fields || []).map((subField) => (
+=======
+                {repeatableFields.map((subField) => (
+>>>>>>> Stashed changes
 
                   <div key={subField.field_key}>
 
@@ -321,23 +337,22 @@ function FieldRenderer({ field, value, onChange }) {
                       )}
                     </label>
 
-                    <input
-                      type="text"
+                    <FieldRenderer
+                      field={subField}
                       value={
-                        groupItem[subField.field_key] || ''
+                        groupItem[subField.field_key]
                       }
-                      onChange={(e) => {
+                      onChange={(newValue) => {
 
                         const updated = [...(value || [])]
 
                         updated[index] = {
                           ...updated[index],
-                          [subField.field_key]: e.target.value
+                          [subField.field_key]: newValue
                         }
 
                         onChange(updated)
                       }}
-                      className={baseClass}
                     />
                   </div>
                 ))}
@@ -349,9 +364,15 @@ function FieldRenderer({ field, value, onChange }) {
             type="button"
             onClick={() => {
 
+              const emptyItem = {}
+
+              repeatableFields.forEach((subField) => {
+                emptyItem[subField.field_key] = ''
+              })
+
               onChange([
                 ...(value || []),
-                {}
+                emptyItem
               ])
             }}
             className="px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-50"
