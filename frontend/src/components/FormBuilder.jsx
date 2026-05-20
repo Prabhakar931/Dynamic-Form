@@ -719,11 +719,7 @@ export default function FormBuilder() {
 
       if (id) {
 
-        await forms.update(id, {
-          name: data.name,
-          description: data.description,
-          status: data.status
-        })
+        await forms.update(id, data)
 
         alert('Form updated!')
 

@@ -555,7 +555,7 @@ router.get('/:id/submissions', async (req, res) => {
 })
 
 // =========================
-// UPDATE FORM
+// UPDATE FORM (sections, fields, options, matrix)
 // =========================
 
 router.put('/:id', async (req, res) => {
@@ -563,7 +563,8 @@ router.put('/:id', async (req, res) => {
   const {
     name,
     description,
-    status
+    status,
+    sections
   } = req.body
 
   try {
@@ -580,31 +581,430 @@ router.put('/:id', async (req, res) => {
       })
     }
 
-    const result = await pool.query(
-      `
-      UPDATE form
-      SET
-        name = COALESCE($1, name),
-        description = COALESCE($2, description),
-        status = COALESCE($3, status)
-      WHERE id = $4
-      RETURNING *
-      `,
-      [
-        name,
-        description,
-        status,
-        req.params.id
-      ]
-    )
+    // =========================
+    // VALIDATIONS (same as POST)
+    // =========================
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        error: 'Form not found'
+    if (!sections || sections.length === 0) {
+      return res.status(400).json({
+        error: 'Form must contain at least one section'
       })
     }
 
-    res.json(result.rows[0])
+    const totalFields = sections.reduce(
+      (acc, section) => acc + (section.fields?.length || 0),
+      0
+    )
+
+    if (totalFields === 0) {
+      return res.status(400).json({
+        error: 'Form must contain at least one field'
+      })
+    }
+
+    const fieldKeys = []
+    const optionFields = ['radio', 'checkbox', 'dropdown', 'multiselect']
+
+    for (const section of sections) {
+      for (const field of section.fields || []) {
+
+        if (!field.field_key || field.field_key.trim() === '') {
+          return res.status(400).json({
+            error: `Field key missing for ${field.label || 'Unnamed Field'}`
+          })
+        }
+
+        const normalizedKey = field.field_key.trim().toLowerCase()
+        const keyRegex = /^[a-z0-9_]+$/
+
+        if (!keyRegex.test(normalizedKey)) {
+          return res.status(400).json({
+            error: `Invalid field key: ${field.field_key}`
+          })
+        }
+
+        if (fieldKeys.includes(normalizedKey)) {
+          return res.status(400).json({
+            error: `Duplicate field key: ${field.field_key}`
+          })
+        }
+
+        fieldKeys.push(normalizedKey)
+
+        if (!field.label || field.label.trim() === '') {
+          return res.status(400).json({
+            error: 'Every field must contain a label'
+          })
+        }
+
+        if (optionFields.includes(field.field_type)) {
+          if (!field.options || field.options.length === 0) {
+            return res.status(400).json({
+              error: `${field.label} requires at least one option`
+            })
+          }
+
+          for (const option of field.options) {
+            if (
+              !option.value ||
+              option.value.trim() === '' ||
+              !option.label ||
+              option.label.trim() === ''
+            ) {
+              return res.status(400).json({
+                error: `Invalid option in ${field.label}`
+              })
+            }
+          }
+        }
+
+        if (field.field_type === 'matrix') {
+          if (
+            !field.matrix_config ||
+            !Array.isArray(field.matrix_config.rows) ||
+            !Array.isArray(field.matrix_config.columns)
+          ) {
+            return res.status(400).json({
+              error: `Invalid matrix configuration in ${field.label}`
+            })
+          }
+
+          if (
+            field.matrix_config.rows.length === 0 ||
+            field.matrix_config.columns.length === 0
+          ) {
+            return res.status(400).json({
+              error: `Matrix field ${field.label} requires rows and columns`
+            })
+          }
+
+          const emptyRow = field.matrix_config.rows.some(
+            row => !row || !row.trim()
+          )
+
+          const validTypes = ['checkbox', 'number', 'text', 'radio']
+
+          const emptyColumn = field.matrix_config.columns.some(
+            col => {
+              if (typeof col === 'string') return !col || !col.trim()
+              return !col.label || !col.label.trim() || !validTypes.includes(col.type)
+            }
+          )
+
+          if (emptyRow || emptyColumn) {
+            return res.status(400).json({
+              error: `${field.label} matrix rows/columns cannot be empty`
+            })
+          }
+        }
+      }
+    }
+
+    const client = await pool.connect()
+
+    try {
+
+      await client.query('BEGIN')
+
+      // =========================
+      // UPDATE FORM METADATA
+      // =========================
+
+      const formResult = await client.query(
+        `
+        UPDATE form
+        SET
+          name = COALESCE($1, name),
+          description = COALESCE($2, description),
+          status = COALESCE($3, status)
+        WHERE id = $4
+        RETURNING *
+        `,
+        [
+          name,
+          description || null,
+          status || 'DRAFT',
+          req.params.id
+        ]
+      )
+
+      if (formResult.rows.length === 0) {
+        await client.query('ROLLBACK')
+        return res.status(404).json({ error: 'Form not found' })
+      }
+
+      const formId = req.params.id
+
+      // =========================
+      // SYNC SECTIONS
+      // =========================
+
+      const incomingSectionIds = sections
+        .map(s => s.id)
+        .filter(id => id != null)
+
+      if (incomingSectionIds.length > 0) {
+        await client.query(
+          `DELETE FROM form_section WHERE form_id = $1 AND id NOT IN (${incomingSectionIds.map((_, i) => '$' + (i + 2)).join(',')})`,
+          [formId, ...incomingSectionIds]
+        )
+      } else {
+        await client.query(
+          'DELETE FROM form_section WHERE form_id = $1',
+          [formId]
+        )
+      }
+
+      for (const sectionData of sections) {
+
+        let sectionId
+
+        if (sectionData.id) {
+
+          // UPDATE existing section
+          await client.query(
+            `
+            UPDATE form_section
+            SET title = $1, description = $2, display_order = $3
+            WHERE id = $4
+            `,
+            [
+              sectionData.title,
+              sectionData.description || null,
+              sectionData.display_order ?? 0,
+              sectionData.id
+            ]
+          )
+          sectionId = sectionData.id
+
+        } else {
+
+          // INSERT new section
+          const result = await client.query(
+            `
+            INSERT INTO form_section
+            (form_id, title, description, display_order)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+            `,
+            [
+              formId,
+              sectionData.title,
+              sectionData.description || null,
+              sectionData.display_order ?? 0
+            ]
+          )
+          sectionId = result.rows[0].id
+        }
+
+        // =========================
+        // SYNC FIELDS per section
+        // =========================
+
+        const fields = sectionData.fields || []
+        const incomingFieldIds = fields
+          .map(f => f.id)
+          .filter(id => id != null)
+
+        if (incomingFieldIds.length > 0) {
+          await client.query(
+            `DELETE FROM form_field WHERE section_id = $1 AND id NOT IN (${incomingFieldIds.map((_, i) => '$' + (i + 2)).join(',')})`,
+            [sectionId, ...incomingFieldIds]
+          )
+        } else {
+          await client.query(
+            'DELETE FROM form_field WHERE section_id = $1',
+            [sectionId]
+          )
+        }
+
+        for (const fieldData of fields) {
+
+          let fieldId
+
+          if (fieldData.id) {
+
+            // UPDATE existing field
+            await client.query(
+              `
+              UPDATE form_field
+              SET
+                label = $1,
+                field_key = $2,
+                field_type = $3,
+                is_required = $4,
+                display_order = $5,
+                field_config = $6
+              WHERE id = $7
+              `,
+              [
+                fieldData.label,
+                fieldData.field_key.trim().toLowerCase(),
+                fieldData.field_type,
+                fieldData.is_required || false,
+                fieldData.display_order ?? 0,
+                fieldData.field_config || {},
+                fieldData.id
+              ]
+            )
+            fieldId = fieldData.id
+
+          } else {
+
+            // INSERT new field
+            const result = await client.query(
+              `
+              INSERT INTO form_field
+              (section_id, label, field_key, field_type, is_required, display_order, field_config)
+              VALUES ($1, $2, $3, $4, $5, $6, $7)
+              RETURNING id
+              `,
+              [
+                sectionId,
+                fieldData.label,
+                fieldData.field_key.trim().toLowerCase(),
+                fieldData.field_type,
+                fieldData.is_required || false,
+                fieldData.display_order ?? 0,
+                fieldData.field_config || {}
+              ]
+            )
+            fieldId = result.rows[0].id
+          }
+
+          // =========================
+          // SYNC OPTIONS per field
+          // =========================
+
+          const options = fieldData.options || []
+          const incomingOptionIds = options
+            .map(o => o.id)
+            .filter(id => id != null)
+
+          if (incomingOptionIds.length > 0) {
+            await client.query(
+              `DELETE FROM field_option WHERE field_id = $1 AND id NOT IN (${incomingOptionIds.map((_, i) => '$' + (i + 2)).join(',')})`,
+              [fieldId, ...incomingOptionIds]
+            )
+          } else {
+            await client.query(
+              'DELETE FROM field_option WHERE field_id = $1',
+              [fieldId]
+            )
+          }
+
+          for (const opt of options) {
+
+            if (opt.id) {
+
+              await client.query(
+                `
+                UPDATE field_option
+                SET value = $1, label = $2, display_order = $3
+                WHERE id = $4
+                `,
+                [
+                  opt.value,
+                  opt.label,
+                  opt.display_order ?? 0,
+                  opt.id
+                ]
+              )
+
+            } else {
+
+              await client.query(
+                `
+                INSERT INTO field_option
+                (field_id, value, label, display_order)
+                VALUES ($1, $2, $3, $4)
+                `,
+                [
+                  fieldId,
+                  opt.value,
+                  opt.label,
+                  opt.display_order ?? 0
+                ]
+              )
+            }
+          }
+
+          // =========================
+          // UPSERT MATRIX CONFIG per field
+          // =========================
+
+          if (fieldData.field_type === 'matrix' && fieldData.matrix_config) {
+
+            const existing = await client.query(
+              'SELECT id FROM field_matrix_config WHERE field_id = $1',
+              [fieldId]
+            )
+
+            if (existing.rows.length > 0) {
+
+              await client.query(
+                `
+                UPDATE field_matrix_config
+                SET rows = $1, columns = $2
+                WHERE field_id = $3
+                `,
+                [
+                  JSON.stringify(fieldData.matrix_config.rows),
+                  JSON.stringify(fieldData.matrix_config.columns),
+                  fieldId
+                ]
+              )
+
+            } else {
+
+              await client.query(
+                `
+                INSERT INTO field_matrix_config
+                (field_id, rows, columns)
+                VALUES ($1, $2, $3)
+                `,
+                [
+                  fieldId,
+                  JSON.stringify(fieldData.matrix_config.rows),
+                  JSON.stringify(fieldData.matrix_config.columns)
+                ]
+              )
+            }
+
+          } else {
+
+            // Remove matrix config if field type changed away from matrix
+            await client.query(
+              'DELETE FROM field_matrix_config WHERE field_id = $1',
+              [fieldId]
+            )
+          }
+        }
+      }
+
+      await client.query('COMMIT')
+
+      const formWithDetails = await client.query(
+        getFormQuery,
+        [formId]
+      )
+
+      res.json(formWithDetails.rows[0])
+
+    } catch (err) {
+
+      await client.query('ROLLBACK')
+
+      console.error(err)
+
+      res.status(500).json({
+        error: err.message
+      })
+
+    } finally {
+
+      client.release()
+    }
 
   } catch (err) {
 
