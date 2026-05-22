@@ -310,6 +310,23 @@ router.get('/:id', async (req, res) => {
         })
       }
 
+      // ✅ HANDLE REPEATABLE GROUP
+
+      if (row.field_type === 'repeatable_group') {
+
+        try {
+
+          value = Array.isArray(row.answer_json)
+            ? row.answer_json
+            : JSON.parse(row.answer_json || '[]')
+
+        } catch {
+
+          value = []
+        }
+      }
+
+
       sectionMap[row.section_id].answers.push({
         label: row.label,
         field_type: row.field_type,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { organisations } from '../api'
 
 export default function Organisations() {
@@ -11,22 +12,35 @@ export default function Organisations() {
   }, [])
 
   const fetchOrganisations = async () => {
-    const { data } = await organisations.getAll()
-    setOrganisations(data)
+    try {
+      const { data } = await organisations.getAll()
+      setOrganisations(data)
+    } catch (err) {
+      toast.error('Failed to load organisations')
+    }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!name.trim()) return
-
-    if (editingId) {
-      await organisations.update(editingId, { name })
-      setEditingId(null)
-    } else {
-      await organisations.create({ name })
+    if (!name.trim()) {
+      toast.error('Please enter an organisation name')
+      return
     }
-    setName('')
-    fetchOrganisations()
+
+    try {
+      if (editingId) {
+        await organisations.update(editingId, { name })
+        toast.success('Organisation updated')
+        setEditingId(null)
+      } else {
+        await organisations.create({ name })
+        toast.success('Organisation created')
+      }
+      setName('')
+      fetchOrganisations()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to save organisation')
+    }
   }
 
   const handleEdit = (org) => {
@@ -36,8 +50,13 @@ export default function Organisations() {
 
   const handleDelete = async (id) => {
     if (confirm('Delete this organisation?')) {
-      await organisations.delete(id)
-      fetchOrganisations()
+      try {
+        await organisations.delete(id)
+        toast.success('Organisation deleted')
+        fetchOrganisations()
+      } catch (err) {
+        toast.error('Failed to delete organisation')
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { submissions, forms, students } from '../api'
 
 export default function Submissions() {
@@ -8,13 +9,16 @@ export default function Submissions() {
   const [selectedForm, setSelectedForm] = useState('')
   const [selectedStudent, setSelectedStudent] = useState('')
 
-  // 🔥 NEW STATE
   const [selectedSubmission, setSelectedSubmission] = useState(null)
   const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
-    forms.getAll().then(({ data }) => setFormsList(data))
-    students.getAll().then(({ data }) => setStudentsList(data))
+    forms.getAll()
+      .then(({ data }) => setFormsList(data))
+      .catch(() => toast.error('Failed to load forms'))
+    students.getAll()
+      .then(({ data }) => setStudentsList(data))
+      .catch(() => toast.error('Failed to load students'))
   }, [])
 
   useEffect(() => {
@@ -22,27 +26,35 @@ export default function Submissions() {
   }, [selectedForm, selectedStudent])
 
   const fetchSubmissions = async () => {
-    const formId = selectedForm || null
-    const studentId = selectedStudent || null
-    const { data } = await submissions.getAll(formId, studentId)
-    setSubmissions(data)
+    try {
+      const formId = selectedForm || null
+      const studentId = selectedStudent || null
+      const { data } = await submissions.getAll(formId, studentId)
+      setSubmissions(data)
+    } catch (err) {
+      toast.error('Failed to load submissions')
+    }
   }
 
   const handleDelete = async (id) => {
     if (confirm('Delete this submission?')) {
-      await submissions.delete(id)
-      fetchSubmissions()
+      try {
+        await submissions.delete(id)
+        toast.success('Submission deleted')
+        fetchSubmissions()
+      } catch (err) {
+        toast.error('Failed to delete submission')
+      }
     }
   }
 
-  // 🔥 VIEW HANDLER
   const handleView = async (id) => {
     try {
       const { data } = await submissions.getById(id)
       setSelectedSubmission(data)
       setShowModal(true)
     } catch (err) {
-      console.error(err)
+      toast.error('Failed to load submission details')
     }
   }
 
@@ -137,36 +149,125 @@ export default function Submissions() {
 
       {/* 🔥 MODAL */}
       {showModal && selectedSubmission && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-[500px] max-h-[80vh] overflow-y-auto shadow-lg">
-            
-            <h3 className="text-lg font-bold mb-4">
-              {selectedSubmission.submission.form_name}
-            </h3>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
-            {selectedSubmission.answers.map((ans, index) => (
-              <div key={index} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {ans.label}
-                </label>
+          <div className="bg-white rounded-xl p-6 w-[700px] max-h-[85vh] overflow-y-auto shadow-xl">
 
-                <div className="p-2 bg-gray-100 rounded">
-                  {ans.answer_text ||
-                   ans.answer_number ||
-                   JSON.stringify(ans.answer_json)}
-                </div>
-              </div>
-            ))}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold">
+                {selectedSubmission.submission.form_name}
+              </h3>
 
-            <div className="text-right mt-4">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                className="text-gray-500 hover:text-black text-xl"
               >
-                Close
+                ×
               </button>
             </div>
 
+            {selectedSubmission.sections.map((section, sectionIdx) => (
+
+              <div
+                key={sectionIdx}
+                className="mb-8 border rounded-lg overflow-hidden"
+              >
+
+                <div className="bg-gray-100 px-4 py-3 border-b">
+                  <h4 className="font-semibold text-lg">
+                    {section.title}
+                  </h4>
+                </div>
+
+                <div className="p-4 space-y-4">
+
+                  {section.answers.map((ans, index) => (
+
+                    <div
+                      key={index}
+                      className="border rounded-lg p-4 bg-gray-50"
+                    >
+
+                      <div className="font-medium text-gray-800 mb-2">
+                        {ans.label}
+                      </div>
+
+                      {/* 🔥 REPEATABLE GROUP */}
+                      {ans.field_type === 'repeatable_group' &&
+                        Array.isArray(ans.value) ? (
+
+                        <div className="space-y-4">
+
+                          {ans.value.map((item, itemIndex) => (
+
+                            <div
+                              key={itemIndex}
+                              className="bg-white border rounded-lg p-4"
+                            >
+
+                              <div className="font-semibold text-blue-700 mb-3">
+                                Person {itemIndex + 1}
+                              </div>
+
+                              <div className="space-y-2">
+
+                                {Object.entries(item).map(([key, value]) => (
+
+                                  <div
+                                    key={key}
+                                    className="grid grid-cols-[140px_1fr] gap-2"
+                                  >
+
+                                    <div className="font-medium text-gray-600 capitalize">
+                                      {key.replace(/_/g, ' ')}
+                                    </div>
+
+                                    <div className="text-gray-900">
+                                      {String(value)}
+                                    </div>
+
+                                  </div>
+                                ))}
+
+                              </div>
+                            </div>
+                          ))}
+
+                        </div>
+
+                      ) : Array.isArray(ans.value) ? (
+
+                        <div className="flex flex-wrap gap-2">
+                          {ans.value.map((v, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
+                            >
+                              {v}
+                            </span>
+                          ))}
+                        </div>
+
+                      ) : typeof ans.value === 'object' &&
+                        ans.value !== null ? (
+
+                        <pre className="bg-white p-3 rounded border text-sm overflow-auto">
+                          {JSON.stringify(ans.value, null, 2)}
+                        </pre>
+
+                      ) : (
+
+                        <div className="text-gray-800">
+                          {String(ans.value ?? '')}
+                        </div>
+
+                      )}
+                    </div>
+                  ))}
+
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

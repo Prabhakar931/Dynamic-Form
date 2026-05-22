@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { forms, organisations, submissions } from '../api'
 
 function SubmissionIcon() {
@@ -40,19 +41,32 @@ export default function Forms() {
   }, [selectedOrg])
 
   const fetchOrgs = async () => {
-    const { data } = await organisations.getAll()
-    setOrgs(data)
+    try {
+      const { data } = await organisations.getAll()
+      setOrgs(data)
+    } catch (err) {
+      toast.error('Failed to load organisations')
+    }
   }
 
   const fetchForms = async (orgId) => {
-    const { data } = await forms.getAll(orgId)
-    setForms(data)
+    try {
+      const { data } = await forms.getAll(orgId)
+      setForms(data)
+    } catch (err) {
+      toast.error('Failed to load forms')
+    }
   }
 
   const handleDelete = async (id) => {
     if (confirm('Delete this form?')) {
-      await forms.delete(id)
-      fetchForms(selectedOrg || null)
+      try {
+        await forms.delete(id)
+        toast.success('Form deleted')
+        fetchForms(selectedOrg || null)
+      } catch (err) {
+        toast.error('Failed to delete form')
+      }
     }
   }
 
@@ -79,7 +93,7 @@ export default function Forms() {
       setDetailData(data)
     } catch (err) {
       console.error(err)
-      alert('Failed to load submission details')
+      toast.error('Failed to load submission details')
     } finally {
       setLoadingDetail(false)
     }
@@ -90,10 +104,11 @@ export default function Forms() {
     if (!window.confirm('Delete this submission?')) return
     try {
       await submissions.delete(id)
+      toast.success('Submission deleted')
       setFormSubmissions(prev => prev.filter(s => s.id !== id))
     } catch (err) {
       console.error(err)
-      alert('Failed to delete submission')
+      toast.error('Failed to delete submission')
     }
   }
 
@@ -176,6 +191,25 @@ export default function Forms() {
               ))}
             </tbody>
           </table>
+        </div>
+      )
+    }
+    if (fieldType === 'repeatable_group' && Array.isArray(value)) {
+      return (
+        <div className="space-y-3 mt-1">
+          {value.map((item, idx) => (
+            <div key={idx} className="border rounded-lg p-3 bg-gray-50">
+              <div className="font-semibold text-blue-700 mb-2">Item {idx + 1}</div>
+              <div className="space-y-1">
+                {Object.entries(item).map(([key, val]) => (
+                  <div key={key} className="grid grid-cols-[140px_1fr] gap-2 text-sm">
+                    <span className="font-medium text-gray-600 capitalize">{key.replace(/_/g, ' ')}</span>
+                    <span className="text-gray-900">{String(val ?? '')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )
     }

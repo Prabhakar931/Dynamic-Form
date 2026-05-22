@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { students, organisations } from '../api'
 
 export default function Students() {
@@ -14,33 +15,50 @@ export default function Students() {
   }, [])
 
   const fetchOrgs = async () => {
-    const { data } = await organisations.getAll()
-    setOrgs(data)
+    try {
+      const { data } = await organisations.getAll()
+      setOrgs(data)
+    } catch (err) {
+      toast.error('Failed to load organisations')
+    }
   }
 
   const fetchStudents = async () => {
-    const { data } = await students.getAll()
-    setStudents(data)
+    try {
+      const { data } = await students.getAll()
+      setStudents(data)
+    } catch (err) {
+      toast.error('Failed to load students')
+    }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!identifier.trim()) return
+    if (!identifier.trim()) {
+      toast.error('Please enter a student identifier')
+      return
+    }
 
-    const data = {
+    const payload = {
       student_identifier: identifier,
       organisation_id: selectedOrg ? parseInt(selectedOrg) : null,
     }
 
-    if (editingId) {
-      await students.update(editingId, data)
-      setEditingId(null)
-    } else {
-      await students.create(data)
+    try {
+      if (editingId) {
+        await students.update(editingId, payload)
+        toast.success('Student updated')
+        setEditingId(null)
+      } else {
+        await students.create(payload)
+        toast.success('Student created')
+      }
+      setIdentifier('')
+      setSelectedOrg('')
+      fetchStudents()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to save student')
     }
-    setIdentifier('')
-    setSelectedOrg('')
-    fetchStudents()
   }
 
   const handleEdit = (student) => {
@@ -51,8 +69,13 @@ export default function Students() {
 
   const handleDelete = async (id) => {
     if (confirm('Delete this student?')) {
-      await students.delete(id)
-      fetchStudents()
+      try {
+        await students.delete(id)
+        toast.success('Student deleted')
+        fetchStudents()
+      } catch (err) {
+        toast.error('Failed to delete student')
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { forms, submissions } from '../api'
 
 function FieldRenderer({ field, value, onChange }) {
@@ -18,8 +19,8 @@ function FieldRenderer({ field, value, onChange }) {
             field.field_type === 'email'
               ? 'email'
               : field.field_type === 'phone'
-              ? 'tel'
-              : 'text'
+                ? 'tel'
+                : 'text'
           }
           value={value || ''}
           onChange={(e) => {
@@ -150,8 +151,8 @@ function FieldRenderer({ field, value, onChange }) {
                     const newVals = e.target.checked
                       ? [...(value || []), opt.value]
                       : (value || []).filter(
-                          (v) => v !== opt.value
-                        )
+                        (v) => v !== opt.value
+                      )
 
                     onChange(newVals)
                   }}
@@ -203,11 +204,10 @@ function FieldRenderer({ field, value, onChange }) {
               key={n}
               type="button"
               onClick={() => onChange(String(n))}
-              className={`w-10 h-10 rounded-full border-2 ${
-                parseInt(value) === n
-                  ? 'bg-yellow-400 border-yellow-500'
-                  : 'border-gray-300 hover:border-yellow-400'
-              } flex items-center justify-center font-bold`}
+              className={`w-10 h-10 rounded-full border-2 ${parseInt(value) === n
+                ? 'bg-yellow-400 border-yellow-500'
+                : 'border-gray-300 hover:border-yellow-400'
+                } flex items-center justify-center font-bold`}
             >
               {n}
             </button>
@@ -333,6 +333,12 @@ function FieldRenderer({ field, value, onChange }) {
       )
 
     case 'repeatable_group':
+
+      const repeatableFields =
+        field.children ||
+        field.field_config?.fields ||
+        []
+
       return (
         <div className="space-y-4">
 
@@ -342,6 +348,7 @@ function FieldRenderer({ field, value, onChange }) {
               key={index}
               className="border rounded-lg p-4 bg-gray-50"
             >
+
               <div className="flex justify-between items-center mb-4">
 
                 <h4 className="font-medium">
@@ -366,7 +373,7 @@ function FieldRenderer({ field, value, onChange }) {
 
               <div className="space-y-4">
 
-                {(field.field_config?.fields || []).map((subField) => (
+                {repeatableFields.map((subField) => (
 
                   <div key={subField.field_key}>
 
@@ -381,23 +388,22 @@ function FieldRenderer({ field, value, onChange }) {
                       )}
                     </label>
 
-                    <input
-                      type="text"
+                    <FieldRenderer
+                      field={subField}
                       value={
-                        groupItem[subField.field_key] || ''
+                        groupItem[subField.field_key]
                       }
-                      onChange={(e) => {
+                      onChange={(newValue) => {
 
                         const updated = [...(value || [])]
 
                         updated[index] = {
                           ...updated[index],
-                          [subField.field_key]: e.target.value
+                          [subField.field_key]: newValue
                         }
 
                         onChange(updated)
                       }}
-                      className={baseClass}
                     />
                   </div>
                 ))}
@@ -409,9 +415,15 @@ function FieldRenderer({ field, value, onChange }) {
             type="button"
             onClick={() => {
 
+              const emptyItem = {}
+
+              repeatableFields.forEach((subField) => {
+                emptyItem[subField.field_key] = ''
+              })
+
               onChange([
                 ...(value || []),
-                {}
+                emptyItem
               ])
             }}
             className="px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-50"
@@ -451,6 +463,7 @@ export default function FormRenderer() {
 
     forms.getById(id)
       .then(({ data }) => setForm(data))
+      .catch(() => toast.error('Failed to load form'))
 
   }, [id])
 
@@ -512,7 +525,7 @@ export default function FormRenderer() {
           value &&
           !/^[0-9]{10}$/.test(value)
         ) {
-          alert(
+          toast.error(
             `${field.label} must be a valid 10 digit mobile number`
           )
 
@@ -525,7 +538,7 @@ export default function FormRenderer() {
           value &&
           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
         ) {
-          alert(
+          toast.error(
             `${field.label} must be a valid email`
           )
 
@@ -556,7 +569,7 @@ export default function FormRenderer() {
                 !matrixAnswers[row] ||
                 String(matrixAnswers[row]).trim() === ''
               ) {
-                alert(
+                toast.error(
                   `${field.label}: ${row} is required`
                 )
 
@@ -582,7 +595,7 @@ export default function FormRenderer() {
                   cellValue === null ||
                   cellValue === ''
                 ) {
-                  alert(
+                  toast.error(
                     `${field.label}: ${row} - ${colLabel} is required`
                   )
 
@@ -604,7 +617,7 @@ export default function FormRenderer() {
             field.is_required &&
             groups.length === 0
           ) {
-            alert(
+            toast.error(
               `${field.label} requires at least one item`
             )
 
@@ -629,7 +642,7 @@ export default function FormRenderer() {
                   String(subValue).trim() === ''
                 )
               ) {
-                alert(
+                toast.error(
                   `${subField.label} is required in ${field.label}`
                 )
 
@@ -650,7 +663,7 @@ export default function FormRenderer() {
             value.trim() === ''
           )
         ) {
-          alert(`${field.label} is required`)
+          toast.error(`${field.label} is required`)
           return false
         }
 
@@ -659,7 +672,7 @@ export default function FormRenderer() {
           Array.isArray(value) &&
           value.length === 0
         ) {
-          alert(`${field.label} is required`)
+          toast.error(`${field.label} is required`)
           return false
         }
 
@@ -669,7 +682,7 @@ export default function FormRenderer() {
           !Array.isArray(value) &&
           Object.keys(value).length === 0
         ) {
-          alert(`${field.label} is required`)
+          toast.error(`${field.label} is required`)
           return false
         }
       }
@@ -708,7 +721,7 @@ export default function FormRenderer() {
         answers: answersPayload
       })
 
-      alert('Form submitted successfully!')
+      toast.success('Form submitted successfully!')
 
       navigate('/forms')
 
@@ -716,7 +729,7 @@ export default function FormRenderer() {
 
       console.error(err)
 
-      alert(
+      toast.error(
         err.response?.data?.error ||
         'Submission failed'
       )
