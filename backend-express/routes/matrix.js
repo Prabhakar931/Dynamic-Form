@@ -1,8 +1,9 @@
 const express = require('express')
 const pool = require('../db')
+const auth = require('../middleware/auth')
 const router = express.Router()
 
-router.post('/:field_id', async (req, res) => {
+router.post('/:field_id', auth, async (req, res) => {
   const { rows, columns } = req.body
   try {
     const result = await pool.query(
@@ -25,7 +26,7 @@ router.get('/:field_id', async (req, res) => {
   }
 })
 
-router.put('/:field_id', async (req, res) => {
+router.put('/:field_id', auth, async (req, res) => {
   const { rows, columns } = req.body
   try {
     const result = await pool.query(
@@ -39,7 +40,7 @@ router.put('/:field_id', async (req, res) => {
   }
 })
 
-router.delete('/:field_id', async (req, res) => {
+router.delete('/:field_id', auth, async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM field_matrix_config WHERE field_id = $1', [req.params.field_id])
     if (result.rowCount === 0) return res.status(404).json({ error: 'Matrix config not found' })

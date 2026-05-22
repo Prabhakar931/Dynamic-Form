@@ -1,8 +1,9 @@
 const express = require('express')
 const pool = require('../db')
+const auth = require('../middleware/auth')
 const router = express.Router()
 
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const { form_id, title, description, display_order, fields } = req.body
   const client = await pool.connect()
 
@@ -309,7 +310,7 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
 
   const {
     title,
@@ -353,7 +354,7 @@ router.put('/:id', async (req, res) => {
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
 
   try {
 

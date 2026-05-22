@@ -1,5 +1,6 @@
 const express = require('express')
 const pool = require('../db')
+const auth = require('../middleware/auth')
 const router = express.Router()
 
 /**
@@ -108,7 +109,7 @@ router.post('/', async (req, res) => {
 /**
  * GET ALL SUBMISSIONS
  */
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   const { form_id } = req.query
 
   try {
@@ -169,7 +170,7 @@ router.get('/', async (req, res) => {
 /**
  * GET SINGLE SUBMISSION
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   const { id } = req.params
 
   try {
@@ -356,7 +357,7 @@ router.get('/:id', async (req, res) => {
 /**
  * DELETE SUBMISSION
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
 
     const result = await pool.query(

@@ -1,5 +1,6 @@
 const express = require('express')
 const pool = require('../db')
+const auth = require('../middleware/auth')
 const router = express.Router()
 
 const getFormQuery = `
@@ -64,7 +65,7 @@ const getFormQuery = `
 // =========================
 // CREATE FORM
 // =========================
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
 
   const {
     organisation_id,
@@ -407,7 +408,7 @@ router.post('/', async (req, res) => {
 // GET ALL FORMS
 // =========================
 
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
 
   const { organisation_id } = req.query
 
@@ -520,7 +521,7 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.get('/:id/submissions', async (req, res) => {
+router.get('/:id/submissions', auth, async (req, res) => {
 
   try {
 
@@ -558,7 +559,7 @@ router.get('/:id/submissions', async (req, res) => {
 // UPDATE FORM (sections, fields, options, matrix)
 // =========================
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
 
   const {
     name,
@@ -1018,7 +1019,7 @@ router.put('/:id', async (req, res) => {
 // DELETE FORM
 // =========================
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
 
   try {
 

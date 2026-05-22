@@ -7,6 +7,35 @@ const api = axios.create({
   },
 })
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('auth_token')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(err)
+  }
+)
+
+export const auth = {
+  login: (username, password) =>
+    api.post('/auth/login', { username, password }),
+
+  me: () =>
+    api.get('/auth/me'),
+}
+
 export const organisations = {
   getAll: () => api.get('/organisations/'),
 

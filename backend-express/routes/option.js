@@ -1,8 +1,9 @@
 const express = require('express')
 const pool = require('../db')
+const auth = require('../middleware/auth')
 const router = express.Router()
 
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const { field_id, value, label, display_order } = req.body
   try {
     const result = await pool.query(
@@ -25,7 +26,7 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   const { value, label, display_order } = req.body
   try {
     const result = await pool.query(
@@ -39,7 +40,7 @@ router.put('/:id', async (req, res) => {
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM field_option WHERE id = $1', [req.params.id])
     if (result.rowCount === 0) return res.status(404).json({ error: 'Option not found' })
