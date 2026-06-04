@@ -218,7 +218,7 @@ router.post('/', auth, async (req, res) => {
           row => !row || !row.trim()
         )
 
-        const validTypes = ['checkbox', 'number', 'text', 'radio']
+        const validTypes = ['checkbox', 'number', 'text']
 
         const emptyColumn = field.matrix_config.columns.some(
           col => {
@@ -683,7 +683,7 @@ router.put('/:id', auth, async (req, res) => {
             row => !row || !row.trim()
           )
 
-          const validTypes = ['checkbox', 'number', 'text', 'radio']
+          const validTypes = ['checkbox', 'number', 'text']
 
           const emptyColumn = field.matrix_config.columns.some(
             col => {

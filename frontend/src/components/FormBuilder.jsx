@@ -465,7 +465,7 @@ function SectionBuilder({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mb-3">
+              <div className={`grid ${field.field_type === 'matrix' ? 'grid-cols-2' : 'grid-cols-3'} gap-3 mb-3`}>
 
                 <select
                   value={field.field_type}
@@ -489,25 +489,27 @@ function SectionBuilder({
                   ))}
                 </select>
 
-                <label className="flex items-center gap-2">
+                {field.field_type !== 'matrix' && (
+                  <label className="flex items-center gap-2">
 
-                  <input
-                    type="checkbox"
-                    checked={
-                      field.is_required
-                    }
-                    onChange={(e) =>
-                      updateField(fieldIdx, {
-                        is_required:
-                          e.target.checked
-                      })
-                    }
-                  />
+                    <input
+                      type="checkbox"
+                      checked={
+                        field.is_required
+                      }
+                      onChange={(e) =>
+                        updateField(fieldIdx, {
+                          is_required:
+                            e.target.checked
+                        })
+                      }
+                    />
 
-                  <span className="text-sm">
-                    Required
-                  </span>
-                </label>
+                    <span className="text-sm">
+                      Required
+                    </span>
+                  </label>
+                )}
 
                 <input
                   type="number"
@@ -612,6 +614,103 @@ function SectionBuilder({
                       </div>
                     )
                   )}
+                </div>
+              )}
+
+              {/* MATRIX */}
+
+              {field.field_type === 'matrix' && (
+                <div className="mt-3 border-t pt-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">Matrix Rows</span>
+                    <button
+                      type="button"
+                      onClick={() => addMatrixRow(fieldIdx)}
+                      className="text-sm text-blue-600"
+                    >
+                      + Add Row
+                    </button>
+                  </div>
+
+                  {(field.matrix_config?.rows || []).map((row, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={row}
+                        onChange={(e) => updateMatrixRow(fieldIdx, idx, e.target.value)}
+                        placeholder="Row label"
+                        className="flex-1 px-3 py-1 border rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeMatrixRow(fieldIdx, idx)}
+                        className="text-red-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="flex justify-between items-center mb-2 mt-3">
+                    <span className="text-sm font-medium">Matrix Columns</span>
+                    <button
+                      type="button"
+                      onClick={() => addMatrixColumn(fieldIdx)}
+                      className="text-sm text-blue-600"
+                    >
+                      + Add Column
+                    </button>
+                  </div>
+
+                  {(field.matrix_config?.columns || []).map((col, idx) => {
+                    const colLabel = typeof col === 'string' ? col : col.label
+                    const colType = typeof col === 'string' ? 'radio' : (col.type || 'text')
+                    const colRequired = typeof col === 'string' ? false : (col.required || false)
+
+                    const updateCol = (patch) => {
+                      if (typeof col === 'string') {
+                        updateMatrixColumn(fieldIdx, idx, { label: col, type: 'text', required: false, ...patch })
+                      } else {
+                        updateMatrixColumn(fieldIdx, idx, { ...col, ...patch })
+                      }
+                    }
+
+                    return (
+                      <div key={idx} className="flex gap-2 mb-2 items-center">
+                        <input
+                          type="text"
+                          value={colLabel}
+                          onChange={(e) => updateCol({ label: e.target.value })}
+                          placeholder="Column label"
+                          className="flex-1 px-3 py-1 border rounded"
+                        />
+                        <select
+                          value={colType}
+                          onChange={(e) => updateCol({ type: e.target.value })}
+                          className="px-2 py-1 border rounded text-sm"
+                        >
+                          <option value="text">Text</option>
+                          <option value="number">Number</option>
+                          <option value="checkbox">Checkbox</option>
+                        </select>
+                        <label className="flex items-center gap-1 text-sm whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={colRequired}
+                            onChange={(e) => updateCol({ required: e.target.checked })}
+                          />
+                          Required
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => removeMatrixColumn(fieldIdx, idx)}
+                          className="text-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 
