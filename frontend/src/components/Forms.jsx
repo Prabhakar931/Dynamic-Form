@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { forms, organisations, submissions } from '../api'
 
-function SubmissionIcon() {
+function SubmissionIcon () {
   return (
     <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -13,151 +13,163 @@ function SubmissionIcon() {
   )
 }
 
-export default function Forms() {
+export default function Forms () {
 
   const navigate = useNavigate()
 
-  const [formsList, setForms] = useState([])
-  const [orgs, setOrgs] = useState([])
-  const [selectedOrg, setSelectedOrg] = useState('')
+  const [formsList, setForms] = useState( [] )
+  const [orgs, setOrgs] = useState( [] )
+  const [selectedOrg, setSelectedOrg] = useState( '' )
 
   // Modal state
-  const [showModal, setShowModal] = useState(false)
-  const [selectedForm, setSelectedForm] = useState(null)
-  const [formSubmissions, setFormSubmissions] = useState([])
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false)
+  const [showModal, setShowModal] = useState( false )
+  const [selectedForm, setSelectedForm] = useState( null )
+  const [formSubmissions, setFormSubmissions] = useState( [] )
+  const [loadingSubmissions, setLoadingSubmissions] = useState( false )
 
   // Detail modal state
-  const [showDetailModal, setShowDetailModal] = useState(false)
-  const [detailData, setDetailData] = useState(null)
-  const [loadingDetail, setLoadingDetail] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState( false )
+  const [detailData, setDetailData] = useState( null )
+  const [loadingDetail, setLoadingDetail] = useState( false )
 
-  useEffect(() => {
+  useEffect( () => {
     fetchOrgs()
-  }, [])
+  }, [] )
 
-  useEffect(() => {
-    fetchForms(selectedOrg || null)
-  }, [selectedOrg])
+  useEffect( () => {
+    fetchForms( selectedOrg || null )
+  }, [selectedOrg] )
 
   const fetchOrgs = async () => {
     try {
       const { data } = await organisations.getAll()
-      setOrgs(data)
-    } catch (err) {
-      toast.error('Failed to load organisations')
+      setOrgs( data )
+    } catch ( err ) {
+      toast.error( 'Failed to load organisations' )
     }
   }
 
-  const fetchForms = async (orgId) => {
+  const fetchForms = async ( orgId ) => {
     try {
-      const { data } = await forms.getAll(orgId)
-      setForms(data)
-    } catch (err) {
-      toast.error('Failed to load forms')
+      const { data } = await forms.getAll( orgId )
+      setForms( data )
+    } catch ( err ) {
+      toast.error( 'Failed to load forms' )
     }
   }
 
-  const handleDelete = async (id) => {
-    if (confirm('Delete this form?')) {
+  const handleDelete = async ( id ) => {
+    if ( confirm( 'Delete this form?' ) ) {
       try {
-        await forms.delete(id)
-        toast.success('Form deleted')
-        fetchForms(selectedOrg || null)
-      } catch (err) {
-        toast.error('Failed to delete form')
+        await forms.delete( id )
+        toast.success( 'Form deleted' )
+        fetchForms( selectedOrg || null )
+      } catch ( err ) {
+        toast.error( 'Failed to delete form' )
       }
     }
   }
-
-  const handleViewSubmissions = async (form) => {
-    setSelectedForm(form)
-    setShowModal(true)
-    setLoadingSubmissions(true)
+  const handleCopyLink = async ( formId ) => {
     try {
-      const { data } = await forms.getSubmissions(form.id)
-      setFormSubmissions(data || [])
-    } catch (err) {
-      console.error(err)
-      setFormSubmissions([])
-    } finally {
-      setLoadingSubmissions(false)
+      const url = `${window.location.origin}/forms/${formId}/render`
+
+      await navigator.clipboard.writeText( url )
+
+      toast.success( 'Form link copied to clipboard!' )
+    } catch ( err ) {
+      console.error( err )
+      toast.error( 'Failed to copy link' )
     }
   }
 
-  const handleViewDetail = async (submissionId) => {
-    setLoadingDetail(true)
-    setShowDetailModal(true)
+  const handleViewSubmissions = async ( form ) => {
+    setSelectedForm( form )
+    setShowModal( true )
+    setLoadingSubmissions( true )
     try {
-      const { data } = await submissions.getById(submissionId)
-      setDetailData(data)
-    } catch (err) {
-      console.error(err)
-      toast.error('Failed to load submission details')
+      const { data } = await forms.getSubmissions( form.id )
+      setFormSubmissions( data || [] )
+    } catch ( err ) {
+      console.error( err )
+      setFormSubmissions( [] )
     } finally {
-      setLoadingDetail(false)
+      setLoadingSubmissions( false )
     }
   }
 
-  const handleDeleteSubmission = async (e, id) => {
+  const handleViewDetail = async ( submissionId ) => {
+    setLoadingDetail( true )
+    setShowDetailModal( true )
+    try {
+      const { data } = await submissions.getById( submissionId )
+      setDetailData( data )
+    } catch ( err ) {
+      console.error( err )
+      toast.error( 'Failed to load submission details' )
+    } finally {
+      setLoadingDetail( false )
+    }
+  }
+
+  const handleDeleteSubmission = async ( e, id ) => {
     e.stopPropagation()
-    if (!window.confirm('Delete this submission?')) return
+    if ( !window.confirm( 'Delete this submission?' ) ) return
     try {
-      await submissions.delete(id)
-      toast.success('Submission deleted')
-      setFormSubmissions(prev => prev.filter(s => s.id !== id))
-    } catch (err) {
-      console.error(err)
-      toast.error('Failed to delete submission')
+      await submissions.delete( id )
+      toast.success( 'Submission deleted' )
+      setFormSubmissions( prev => prev.filter( s => s.id !== id ) )
+    } catch ( err ) {
+      console.error( err )
+      toast.error( 'Failed to delete submission' )
     }
   }
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-US', {
+  const formatDate = ( dateStr ) => {
+    if ( !dateStr ) return '-'
+    const d = new Date( dateStr )
+    return d.toLocaleDateString( 'en-US', {
       year: 'numeric', month: 'short', day: 'numeric',
       hour: '2-digit', minute: '2-digit'
-    })
+    } )
   }
 
-  const renderValue = (value, fieldType, matrixConfig) => {
-    if (value === null || value === undefined || value === '') return <span className="text-gray-400 italic">No answer</span>
-    if (fieldType === 'checkbox' || fieldType === 'multiselect') {
-      const items = Array.isArray(value) ? value : []
-      if (items.length === 0) return <span className="text-gray-400 italic">None selected</span>
+  const renderValue = ( value, fieldType, matrixConfig ) => {
+    if ( value === null || value === undefined || value === '' ) return <span className="text-gray-400 italic">No answer</span>
+    if ( fieldType === 'checkbox' || fieldType === 'multiselect' ) {
+      const items = Array.isArray( value ) ? value : []
+      if ( items.length === 0 ) return <span className="text-gray-400 italic">None selected</span>
       return (
         <div className="flex flex-wrap gap-1.5 mt-1">
-          {items.map((item, i) => (
+          {items.map( ( item, i ) => (
             <span key={i} className="inline-block px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
               {item}
             </span>
-          ))}
+          ) )}
         </div>
       )
     }
-    if (fieldType === 'matrix') {
+    if ( fieldType === 'matrix' ) {
       const rows = matrixConfig?.rows?.length
         ? matrixConfig.rows
-        : Object.keys(value || {})
+        : Object.keys( value || {} )
 
       const columns = matrixConfig?.columns?.length
-        ? matrixConfig.columns.map(c => typeof c === 'string' ? c : c.label)
+        ? matrixConfig.columns.map( c => typeof c === 'string' ? c : c.label )
         : rows.length > 0 && typeof value[rows[0]] === 'object' && value[rows[0]] !== null
-          ? [...new Set(rows.flatMap(r => Object.keys(value[r] || {})))]
+          ? [...new Set( rows.flatMap( r => Object.keys( value[r] || {} ) ) )]
           : ['Answer']
 
-      if (rows.length === 0) return <span className="text-gray-400 italic">No answers</span>
+      if ( rows.length === 0 ) return <span className="text-gray-400 italic">No answers</span>
 
       const colTypes = matrixConfig?.columns?.length
         ? Object.fromEntries(
-            matrixConfig.columns.map(c =>
-              typeof c === 'string' ? [c, 'radio'] : [c.label, c.type || 'radio']
-            )
+          matrixConfig.columns.map( c =>
+            typeof c === 'string' ? [c, 'radio'] : [c.label, c.type || 'radio']
           )
+        )
         : {}
 
-      const isNewFormat = columns.length > 1 || (columns.length === 1 && columns[0] !== 'Answer')
+      const isNewFormat = columns.length > 1 || ( columns.length === 1 && columns[0] !== 'Answer' )
 
       return (
         <div className="overflow-x-auto mt-1">
@@ -165,58 +177,58 @@ export default function Forms() {
             <thead>
               <tr>
                 <th className="border p-1.5 bg-gray-50 text-left font-medium">Question</th>
-                {columns.map((col, i) => (
+                {columns.map( ( col, i ) => (
                   <th key={i} className="border p-1.5 bg-gray-50 text-left font-medium">{col}</th>
-                ))}
+                ) )}
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, ri) => (
+              {rows.map( ( row, ri ) => (
                 <tr key={ri}>
                   <td className="border p-1.5 font-medium">{row}</td>
                   {isNewFormat ? (
-                    columns.map((col, ci) => {
+                    columns.map( ( col, ci ) => {
                       const cell = value?.[row]?.[col]
                       const display = cell === undefined && colTypes[col] === 'checkbox'
                         ? 'No'
                         : typeof cell === 'boolean'
-                          ? (cell ? 'Yes' : 'No')
-                          : (cell ?? '-')
-                      return <td key={ci} className="border p-1.5">{String(display)}</td>
-                    })
+                          ? ( cell ? 'Yes' : 'No' )
+                          : ( cell ?? '-' )
+                      return <td key={ci} className="border p-1.5">{String( display )}</td>
+                    } )
                   ) : (
-                    <td className="border p-1.5">{String(value?.[row] ?? '-')}</td>
+                    <td className="border p-1.5">{String( value?.[row] ?? '-' )}</td>
                   )}
                 </tr>
-              ))}
+              ) )}
             </tbody>
           </table>
         </div>
       )
     }
-    if (fieldType === 'repeatable_group' && Array.isArray(value)) {
+    if ( fieldType === 'repeatable_group' && Array.isArray( value ) ) {
       return (
         <div className="space-y-3 mt-1">
-          {value.map((item, idx) => (
+          {value.map( ( item, idx ) => (
             <div key={idx} className="border rounded-lg p-3 bg-gray-50">
               <div className="font-semibold text-blue-700 mb-2">Item {idx + 1}</div>
               <div className="space-y-1">
-                {Object.entries(item).map(([key, val]) => (
+                {Object.entries( item ).map( ( [key, val] ) => (
                   <div key={key} className="grid grid-cols-[140px_1fr] gap-2 text-sm">
-                    <span className="font-medium text-gray-600 capitalize">{key.replace(/_/g, ' ')}</span>
-                    <span className="text-gray-900">{String(val ?? '')}</span>
+                    <span className="font-medium text-gray-600 capitalize">{key.replace( /_/g, ' ' )}</span>
+                    <span className="text-gray-900">{String( val ?? '' )}</span>
                   </div>
-                ))}
+                ) )}
               </div>
             </div>
-          ))}
+          ) )}
         </div>
       )
     }
-    if (typeof value === 'object') {
-      return <pre className="text-sm bg-gray-50 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>
+    if ( typeof value === 'object' ) {
+      return <pre className="text-sm bg-gray-50 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify( value, null, 2 )}</pre>
     }
-    return <span>{String(value)}</span>
+    return <span>{String( value )}</span>
   }
 
   return (
@@ -235,13 +247,13 @@ export default function Forms() {
       <div className="mb-6">
         <select
           value={selectedOrg}
-          onChange={(e) => setSelectedOrg(e.target.value)}
+          onChange={( e ) => setSelectedOrg( e.target.value )}
           className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">All Organisations</option>
-          {orgs.map((org) => (
+          {orgs.map( ( org ) => (
             <option key={org.id} value={org.id}>{org.name}</option>
-          ))}
+          ) )}
         </select>
       </div>
 
@@ -251,7 +263,7 @@ export default function Forms() {
             <p className="text-gray-500">No forms yet. Create one to get started.</p>
           </div>
         ) : (
-          formsList.map((form) => (
+          formsList.map( ( form ) => (
             <div
               key={form.id}
               className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
@@ -266,11 +278,10 @@ export default function Forms() {
                     <span>Sections: {form.sections?.length || 0}</span>
                     <span>
                       Status:
-                      <span className={`ml-1 px-2 py-0.5 rounded text-xs ${
-                        form.status === 'PUBLISHED'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
+                      <span className={`ml-1 px-2 py-0.5 rounded text-xs ${form.status === 'PUBLISHED'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                        }`}>
                         {form.status}
                       </span>
                     </span>
@@ -295,7 +306,7 @@ export default function Forms() {
                     </Link>
                   )}
 
-                  {form.status === 'PUBLISHED' && (form.sections?.length || 0) > 0 && (
+                  {form.status === 'PUBLISHED' && ( form.sections?.length || 0 ) > 0 && (
                     <>
                       <Link
                         to={`/forms/${form.id}/render`}
@@ -305,7 +316,14 @@ export default function Forms() {
                       </Link>
 
                       <button
-                        onClick={() => handleViewSubmissions(form)}
+                        onClick={() => handleCopyLink( form.id )}
+                        className="px-4 py-2 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors"
+                      >
+                        Copy Link
+                      </button>
+
+                      <button
+                        onClick={() => handleViewSubmissions( form )}
                         className="px-4 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
                       >
                         View Submissions
@@ -314,7 +332,7 @@ export default function Forms() {
                   )}
 
                   <button
-                    onClick={() => handleDelete(form.id)}
+                    onClick={() => handleDelete( form.id )}
                     className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                   >
                     Delete
@@ -322,7 +340,7 @@ export default function Forms() {
                 </div>
               </div>
             </div>
-          ))
+          ) )
         )}
       </div>
 
@@ -339,7 +357,7 @@ export default function Forms() {
                 </span>
               </div>
               <button
-                onClick={() => { setShowModal(false); setFormSubmissions([]) }}
+                onClick={() => { setShowModal( false ); setFormSubmissions( [] ) }}
                 className="text-gray-400 hover:text-gray-600 text-2xl leading-none transition-colors"
               >
                 &times;
@@ -350,7 +368,7 @@ export default function Forms() {
             <div className="p-6 overflow-y-auto flex-1">
               {loadingSubmissions ? (
                 <div className="space-y-4">
-                  {[1,2,3].map(i => (
+                  {[1, 2, 3].map( i => (
                     <div key={i} className="border rounded-xl p-5 animate-pulse">
                       <div className="flex justify-between">
                         <div className="space-y-2">
@@ -364,7 +382,7 @@ export default function Forms() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ) )}
                 </div>
               ) : formSubmissions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -374,7 +392,7 @@ export default function Forms() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {formSubmissions.map((submission) => (
+                  {formSubmissions.map( ( submission ) => (
                     <div
                       key={submission.id}
                       className="group border border-gray-200 rounded-xl p-5 hover:border-blue-200 hover:shadow-sm transition-all"
@@ -389,7 +407,7 @@ export default function Forms() {
                               Submission #{submission.id}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {formatDate(submission.submitted_at)}
+                              {formatDate( submission.submitted_at )}
                             </p>
                             <p className="text-xs text-gray-400">
                               {submission.answer_count > 0
@@ -400,13 +418,13 @@ export default function Forms() {
                         </div>
                         <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => handleViewDetail(submission.id)}
+                            onClick={() => handleViewDetail( submission.id )}
                             className="px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 font-medium transition-colors"
                           >
                             View
                           </button>
                           <button
-                            onClick={(e) => handleDeleteSubmission(e, submission.id)}
+                            onClick={( e ) => handleDeleteSubmission( e, submission.id )}
                             className="px-4 py-2 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-medium transition-colors"
                           >
                             Delete
@@ -414,7 +432,7 @@ export default function Forms() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ) )}
                 </div>
               )}
             </div>
@@ -433,14 +451,14 @@ export default function Forms() {
                   Submission #{detailData?.submission?.id || ''}
                 </h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {detailData?.submission?.form_name} &middot; {formatDate(detailData?.submission?.submitted_at)}
+                  {detailData?.submission?.form_name} &middot; {formatDate( detailData?.submission?.submitted_at )}
                   {detailData?.sections && (
-                    <span> &middot; {detailData.sections.reduce((sum, s) => sum + (s.answers?.length || 0), 0)} answers</span>
+                    <span> &middot; {detailData.sections.reduce( ( sum, s ) => sum + ( s.answers?.length || 0 ), 0 )} answers</span>
                   )}
                 </p>
               </div>
               <button
-                onClick={() => { setShowDetailModal(false); setDetailData(null) }}
+                onClick={() => { setShowDetailModal( false ); setDetailData( null ) }}
                 className="text-gray-400 hover:text-gray-600 text-2xl leading-none transition-colors"
               >
                 &times;
@@ -451,7 +469,7 @@ export default function Forms() {
             <div className="p-6 overflow-y-auto flex-1">
               {loadingDetail ? (
                 <div className="space-y-6">
-                  {[1,2].map(i => (
+                  {[1, 2].map( i => (
                     <div key={i} className="animate-pulse">
                       <div className="h-5 w-32 bg-gray-200 rounded mb-4" />
                       <div className="space-y-3">
@@ -459,33 +477,33 @@ export default function Forms() {
                         <div className="h-16 bg-gray-100 rounded-lg" />
                       </div>
                     </div>
-                  ))}
+                  ) )}
                 </div>
               ) : detailData ? (
                 <div className="space-y-6">
-                  {detailData.sections?.map((section, idx) => (
+                  {detailData.sections?.map( ( section, idx ) => (
                     <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
                       <div className="bg-gray-50 px-5 py-3 border-b">
                         <h3 className="font-semibold text-gray-800">{section.title}</h3>
                       </div>
                       <div className="divide-y divide-gray-100">
-                        {section.answers?.map((answer, aidx) => (
+                        {section.answers?.map( ( answer, aidx ) => (
                           <div key={aidx} className="px-5 py-4">
                             <p className="text-sm font-medium text-gray-600">{answer.label}</p>
                             <div className="mt-1 text-gray-900">
-                              {renderValue(answer.value, answer.field_type, answer.matrix_config)}
+                              {renderValue( answer.value, answer.field_type, answer.matrix_config )}
                             </div>
                           </div>
-                        ))}
-                        {(!section.answers || section.answers.length === 0) && (
+                        ) )}
+                        {( !section.answers || section.answers.length === 0 ) && (
                           <div className="px-5 py-4 text-sm text-gray-400 italic">
                             No answers in this section
                           </div>
                         )}
                       </div>
                     </div>
-                  ))}
-                  {(!detailData.sections || detailData.sections.length === 0) && (
+                  ) )}
+                  {( !detailData.sections || detailData.sections.length === 0 ) && (
                     <div className="text-center py-8 text-gray-500">
                       No sections found for this submission.
                     </div>

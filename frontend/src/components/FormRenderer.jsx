@@ -3,12 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { forms, submissions } from '../api'
 
-function FieldRenderer({ field, value, onChange }) {
+function FieldRenderer ( { field, value, onChange } ) {
 
   const baseClass =
     "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 
-  switch (field.field_type) {
+  switch ( field.field_type ) {
 
     case 'text':
     case 'email':
@@ -23,15 +23,15 @@ function FieldRenderer({ field, value, onChange }) {
                 : 'text'
           }
           value={value || ''}
-          onChange={(e) => {
+          onChange={( e ) => {
 
             let val = e.target.value
 
-            if (field.field_type === 'phone') {
-              val = val.replace(/\D/g, '').slice(0, 10)
+            if ( field.field_type === 'phone' ) {
+              val = val.replace( /\D/g, '' ).slice( 0, 10 )
             }
 
-            onChange(val)
+            onChange( val )
           }}
           placeholder={
             field.field_type === 'phone'
@@ -47,7 +47,7 @@ function FieldRenderer({ field, value, onChange }) {
       return (
         <textarea
           value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={( e ) => onChange( e.target.value )}
           rows={4}
           className={baseClass}
           required={field.is_required}
@@ -61,7 +61,7 @@ function FieldRenderer({ field, value, onChange }) {
           min="0"
           step="any"
           value={value || ''}
-          onChange={(e) => onChange(Number(e.target.value))}
+          onChange={( e ) => onChange( Number( e.target.value ) )}
           className={baseClass}
           required={field.is_required}
         />
@@ -72,7 +72,7 @@ function FieldRenderer({ field, value, onChange }) {
         <input
           type="date"
           value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={( e ) => onChange( e.target.value )}
           className={baseClass}
           required={field.is_required}
         />
@@ -82,7 +82,7 @@ function FieldRenderer({ field, value, onChange }) {
       return (
         <select
           value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={( e ) => onChange( e.target.value )}
           className={baseClass}
           required={field.is_required}
         >
@@ -90,14 +90,14 @@ function FieldRenderer({ field, value, onChange }) {
             Select...
           </option>
 
-          {field.options?.map((opt) => (
+          {field.options?.map( ( opt ) => (
             <option
               key={opt.id}
               value={opt.value}
             >
               {opt.label || opt.value}
             </option>
-          ))}
+          ) )}
         </select>
       )
 
@@ -105,7 +105,7 @@ function FieldRenderer({ field, value, onChange }) {
       return (
         <div className="space-y-2">
 
-          {field.options?.map((opt) => (
+          {field.options?.map( ( opt ) => (
 
             <label
               key={opt.id}
@@ -116,8 +116,8 @@ function FieldRenderer({ field, value, onChange }) {
                 name={field.field_key}
                 value={opt.value}
                 checked={value === opt.value}
-                onChange={(e) =>
-                  onChange(e.target.value)
+                onChange={( e ) =>
+                  onChange( e.target.value )
                 }
               />
 
@@ -125,7 +125,7 @@ function FieldRenderer({ field, value, onChange }) {
                 {opt.label || opt.value}
               </span>
             </label>
-          ))}
+          ) )}
         </div>
       )
 
@@ -133,10 +133,10 @@ function FieldRenderer({ field, value, onChange }) {
       return (
         <div className="space-y-2">
 
-          {field.options?.map((opt) => {
+          {field.options?.map( ( opt ) => {
 
             const selected =
-              (value || []).includes(opt.value)
+              ( value || [] ).includes( opt.value )
 
             return (
               <label
@@ -146,15 +146,15 @@ function FieldRenderer({ field, value, onChange }) {
                 <input
                   type="checkbox"
                   checked={selected}
-                  onChange={(e) => {
+                  onChange={( e ) => {
 
                     const newVals = e.target.checked
-                      ? [...(value || []), opt.value]
-                      : (value || []).filter(
-                        (v) => v !== opt.value
+                      ? [...( value || [] ), opt.value]
+                      : ( value || [] ).filter(
+                        ( v ) => v !== opt.value
                       )
 
-                    onChange(newVals)
+                    onChange( newVals )
                   }}
                 />
 
@@ -163,7 +163,7 @@ function FieldRenderer({ field, value, onChange }) {
                 </span>
               </label>
             )
-          })}
+          } )}
         </div>
       )
 
@@ -172,25 +172,25 @@ function FieldRenderer({ field, value, onChange }) {
         <select
           multiple
           value={value || []}
-          onChange={(e) => {
+          onChange={( e ) => {
 
             const selected = Array.from(
               e.target.selectedOptions,
-              (o) => o.value
+              ( o ) => o.value
             )
 
-            onChange(selected)
+            onChange( selected )
           }}
           className={`${baseClass} min-h-[120px]`}
         >
-          {field.options?.map((opt) => (
+          {field.options?.map( ( opt ) => (
             <option
               key={opt.id}
               value={opt.value}
             >
               {opt.label || opt.value}
             </option>
-          ))}
+          ) )}
         </select>
       )
 
@@ -198,20 +198,20 @@ function FieldRenderer({ field, value, onChange }) {
       return (
         <div className="flex gap-2">
 
-          {[1, 2, 3, 4, 5].map((n) => (
+          {[1, 2, 3, 4, 5].map( ( n ) => (
 
             <button
               key={n}
               type="button"
-              onClick={() => onChange(String(n))}
-              className={`w-10 h-10 rounded-full border-2 ${parseInt(value) === n
+              onClick={() => onChange( String( n ) )}
+              className={`w-10 h-10 rounded-full border-2 ${parseInt( value ) === n
                 ? 'bg-yellow-400 border-yellow-500'
                 : 'border-gray-300 hover:border-yellow-400'
                 } flex items-center justify-center font-bold`}
             >
               {n}
             </button>
-          ))}
+          ) )}
         </div>
       )
 
@@ -227,7 +227,7 @@ function FieldRenderer({ field, value, onChange }) {
                   Question
                 </th>
 
-                {field.matrix_config?.columns?.map((col, idx) => {
+                {field.matrix_config?.columns?.map( ( col, idx ) => {
 
                   const colLabel = typeof col === 'string' ? col : col.label
 
@@ -239,12 +239,12 @@ function FieldRenderer({ field, value, onChange }) {
                       {colLabel}
                     </th>
                   )
-                })}
+                } )}
               </tr>
             </thead>
 
             <tbody>
-              {field.matrix_config?.rows?.map((row, rowIdx) => (
+              {field.matrix_config?.rows?.map( ( row, rowIdx ) => (
 
                 <tr key={rowIdx}>
 
@@ -252,30 +252,30 @@ function FieldRenderer({ field, value, onChange }) {
                     {row}
                   </td>
 
-                  {field.matrix_config?.columns?.map((col, colIdx) => {
+                  {field.matrix_config?.columns?.map( ( col, colIdx ) => {
 
                     const colLabel = typeof col === 'string' ? col : col.label
-                    const colType = typeof col === 'string' ? 'radio' : (col.type || 'text')
+                    const colType = typeof col === 'string' ? 'radio' : ( col.type || 'text' )
                     const isOldFormat = value?.[row] && typeof value[row] === 'string'
 
                     const cellValue = isOldFormat
                       ? value?.[row]
                       : value?.[row]?.[colLabel]
 
-                    const handleChange = (newVal) => {
-                      if (isOldFormat) {
-                        onChange({
-                          ...(value || {}),
+                    const handleChange = ( newVal ) => {
+                      if ( isOldFormat ) {
+                        onChange( {
+                          ...( value || {} ),
                           [row]: newVal
-                        })
+                        } )
                       } else {
-                        onChange({
-                          ...(value || {}),
+                        onChange( {
+                          ...( value || {} ),
                           [row]: {
-                            ...(value?.[row] || {}),
+                            ...( value?.[row] || {} ),
                             [colLabel]: newVal
                           }
-                        })
+                        } )
                       }
                     }
 
@@ -288,8 +288,8 @@ function FieldRenderer({ field, value, onChange }) {
                           <input
                             type="checkbox"
                             checked={!!cellValue}
-                            onChange={(e) =>
-                              handleChange(e.target.checked)
+                            onChange={( e ) =>
+                              handleChange( e.target.checked )
                             }
                           />
                         ) : colType === 'number' ? (
@@ -298,8 +298,8 @@ function FieldRenderer({ field, value, onChange }) {
                             min="0"
                             step="any"
                             value={cellValue ?? ''}
-                            onChange={(e) =>
-                              handleChange(Number(e.target.value))
+                            onChange={( e ) =>
+                              handleChange( Number( e.target.value ) )
                             }
                             className="w-20 px-2 py-1 border rounded text-sm"
                           />
@@ -309,24 +309,24 @@ function FieldRenderer({ field, value, onChange }) {
                             name={`${field.field_key}_${row}`}
                             checked={cellValue === colLabel}
                             onChange={() =>
-                              handleChange(colLabel)
+                              handleChange( colLabel )
                             }
                           />
                         ) : (
                           <input
                             type="text"
                             value={cellValue ?? ''}
-                            onChange={(e) =>
-                              handleChange(e.target.value)
+                            onChange={( e ) =>
+                              handleChange( e.target.value )
                             }
                             className="w-full px-2 py-1 border rounded text-sm"
                           />
                         )}
                       </td>
                     )
-                  })}
+                  } )}
                 </tr>
-              ))}
+              ) )}
             </tbody>
           </table>
         </div>
@@ -342,7 +342,7 @@ function FieldRenderer({ field, value, onChange }) {
       return (
         <div className="space-y-4">
 
-          {(value || []).map((groupItem, index) => (
+          {( value || [] ).map( ( groupItem, index ) => (
 
             <div
               key={index}
@@ -359,11 +359,11 @@ function FieldRenderer({ field, value, onChange }) {
                   type="button"
                   onClick={() => {
 
-                    const updated = [...(value || [])]
+                    const updated = [...( value || [] )]
 
-                    updated.splice(index, 1)
+                    updated.splice( index, 1 )
 
-                    onChange(updated)
+                    onChange( updated )
                   }}
                   className="text-red-600 text-sm"
                 >
@@ -373,7 +373,7 @@ function FieldRenderer({ field, value, onChange }) {
 
               <div className="space-y-4">
 
-                {repeatableFields.map((subField) => (
+                {repeatableFields.map( ( subField ) => (
 
                   <div key={subField.field_key}>
 
@@ -393,23 +393,23 @@ function FieldRenderer({ field, value, onChange }) {
                       value={
                         groupItem[subField.field_key]
                       }
-                      onChange={(newValue) => {
+                      onChange={( newValue ) => {
 
-                        const updated = [...(value || [])]
+                        const updated = [...( value || [] )]
 
                         updated[index] = {
                           ...updated[index],
                           [subField.field_key]: newValue
                         }
 
-                        onChange(updated)
+                        onChange( updated )
                       }}
                     />
                   </div>
-                ))}
+                ) )}
               </div>
             </div>
-          ))}
+          ) )}
 
           <button
             type="button"
@@ -417,14 +417,14 @@ function FieldRenderer({ field, value, onChange }) {
 
               const emptyItem = {}
 
-              repeatableFields.forEach((subField) => {
+              repeatableFields.forEach( ( subField ) => {
                 emptyItem[subField.field_key] = ''
-              })
+              } )
 
-              onChange([
-                ...(value || []),
+              onChange( [
+                ...( value || [] ),
                 emptyItem
-              ])
+              ] )
             }}
             className="px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-50"
           >
@@ -438,8 +438,8 @@ function FieldRenderer({ field, value, onChange }) {
         <input
           type="text"
           value={value || ''}
-          onChange={(e) =>
-            onChange(e.target.value)
+          onChange={( e ) =>
+            onChange( e.target.value )
           }
           className={baseClass}
         />
@@ -447,35 +447,35 @@ function FieldRenderer({ field, value, onChange }) {
   }
 }
 
-export default function FormRenderer() {
+export default function FormRenderer () {
 
   const { id } = useParams()
 
   const navigate = useNavigate()
 
-  const [form, setForm] = useState(null)
+  const [form, setForm] = useState( null )
 
-  const [answers, setAnswers] = useState({})
+  const [answers, setAnswers] = useState( {} )
 
-  const [submitting, setSubmitting] = useState(false)
+  const [submitting, setSubmitting] = useState( false )
 
-  useEffect(() => {
+  useEffect( () => {
 
-    forms.getById(id)
-      .then(({ data }) => setForm(data))
-      .catch(() => toast.error('Failed to load form'))
+    forms.getById( id )
+      .then( ( { data } ) => setForm( data ) )
+      .catch( () => toast.error( 'Failed to load form' ) )
 
-  }, [id])
+  }, [id] )
 
-  const handleAnswerChange = (fieldId, value) => {
+  const handleAnswerChange = ( fieldId, value ) => {
 
-    setAnswers((prev) => ({
+    setAnswers( ( prev ) => ( {
       ...prev,
       [fieldId]: value
-    }))
+    } ) )
   }
 
-  const buildAnswerPayload = (field, value) => {
+  const buildAnswerPayload = ( field, value ) => {
 
     if (
       value === null ||
@@ -499,23 +499,23 @@ export default function FormRenderer() {
       }
     }
 
-    if (typeof value === 'number') {
+    if ( typeof value === 'number' ) {
       return {
         answer_number: value,
-        answer_text: String(value)
+        answer_text: String( value )
       }
     }
 
     return {
-      answer_text: String(value)
+      answer_text: String( value )
     }
   }
 
   const validateForm = () => {
 
-    for (const section of form.sections) {
+    for ( const section of form.sections ) {
 
-      for (const field of section.fields) {
+      for ( const field of section.fields ) {
 
         const value = answers[field.id]
 
@@ -523,7 +523,7 @@ export default function FormRenderer() {
         if (
           field.field_type === 'phone' &&
           value &&
-          !/^[0-9]{10}$/.test(value)
+          !/^[0-9]{10}$/.test( value )
         ) {
           toast.error(
             `${field.label} must be a valid 10 digit mobile number`
@@ -536,7 +536,7 @@ export default function FormRenderer() {
         if (
           field.field_type === 'email' &&
           value &&
-          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( value )
         ) {
           toast.error(
             `${field.label} must be a valid email`
@@ -546,7 +546,7 @@ export default function FormRenderer() {
         }
 
         // MATRIX VALIDATION
-        if (field.field_type === 'matrix') {
+        if ( field.field_type === 'matrix' ) {
 
           const matrixAnswers = value || {}
 
@@ -559,15 +559,15 @@ export default function FormRenderer() {
             row => matrixAnswers[row] && typeof matrixAnswers[row] === 'string'
           )
 
-          if (isOldFormat) {
+          if ( isOldFormat ) {
 
-            if (!field.is_required) continue
+            if ( !field.is_required ) continue
 
-            for (const row of rows) {
+            for ( const row of rows ) {
 
               if (
                 !matrixAnswers[row] ||
-                String(matrixAnswers[row]).trim() === ''
+                String( matrixAnswers[row] ).trim() === ''
               ) {
                 toast.error(
                   `${field.label}: ${row} is required`
@@ -579,14 +579,14 @@ export default function FormRenderer() {
 
           } else {
 
-            for (const row of rows) {
+            for ( const row of rows ) {
 
-              for (const col of columns) {
+              for ( const col of columns ) {
 
                 const colLabel = typeof col === 'string' ? col : col.label
-                const colRequired = typeof col === 'string' ? true : (col.required ?? false)
+                const colRequired = typeof col === 'string' ? true : ( col.required ?? false )
 
-                if (!colRequired) continue
+                if ( !colRequired ) continue
 
                 const cellValue = matrixAnswers?.[row]?.[colLabel]
 
@@ -624,7 +624,7 @@ export default function FormRenderer() {
             return false
           }
 
-          for (const item of groups) {
+          for ( const item of groups ) {
 
             for (
               const subField of
@@ -639,7 +639,7 @@ export default function FormRenderer() {
                 (
                   subValue === undefined ||
                   subValue === null ||
-                  String(subValue).trim() === ''
+                  String( subValue ).trim() === ''
                 )
               ) {
                 toast.error(
@@ -652,7 +652,7 @@ export default function FormRenderer() {
           }
         }
 
-        if (!field.is_required) continue
+        if ( !field.is_required ) continue
 
         // EMPTY STRING
         if (
@@ -663,26 +663,26 @@ export default function FormRenderer() {
             value.trim() === ''
           )
         ) {
-          toast.error(`${field.label} is required`)
+          toast.error( `${field.label} is required` )
           return false
         }
 
         // EMPTY ARRAY
         if (
-          Array.isArray(value) &&
+          Array.isArray( value ) &&
           value.length === 0
         ) {
-          toast.error(`${field.label} is required`)
+          toast.error( `${field.label} is required` )
           return false
         }
 
         // EMPTY OBJECT
         if (
           typeof value === 'object' &&
-          !Array.isArray(value) &&
-          Object.keys(value).length === 0
+          !Array.isArray( value ) &&
+          Object.keys( value ).length === 0
         ) {
-          toast.error(`${field.label} is required`)
+          toast.error( `${field.label} is required` )
           return false
         }
       }
@@ -691,21 +691,21 @@ export default function FormRenderer() {
     return true
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async ( e ) => {
 
     e.preventDefault()
 
-    if (submitting) return
+    if ( submitting ) return
 
-    if (!validateForm()) return
+    if ( !validateForm() ) return
 
-    setSubmitting(true)
+    setSubmitting( true )
 
     try {
 
       const answersPayload =
-        form.sections.flatMap((section) =>
-          section.fields.map((field) => ({
+        form.sections.flatMap( ( section ) =>
+          section.fields.map( ( field ) => ( {
 
             field_id: field.id,
 
@@ -713,21 +713,21 @@ export default function FormRenderer() {
               field,
               answers[field.id]
             )
-          }))
+          } ) )
         )
 
-      await submissions.create({
-        form_id: parseInt(id),
+      await submissions.create( {
+        form_id: parseInt( id ),
         answers: answersPayload
-      })
+      } )
 
-      toast.success('Form submitted successfully!')
+      toast.success( 'Form submitted successfully!' )
 
-      navigate('/forms')
+      navigate( '/forms' )
 
-    } catch (err) {
+    } catch ( err ) {
 
-      console.error(err)
+      console.error( err )
 
       toast.error(
         err.response?.data?.error ||
@@ -736,11 +736,11 @@ export default function FormRenderer() {
 
     } finally {
 
-      setSubmitting(false)
+      setSubmitting( false )
     }
   }
 
-  if (!form) {
+  if ( !form ) {
     return <p>Loading...</p>
   }
 
@@ -762,7 +762,7 @@ export default function FormRenderer() {
 
       <form onSubmit={handleSubmit}>
 
-        {form.sections.map((section) => (
+        {form.sections.map( ( section ) => (
 
           <div
             key={section.id}
@@ -781,7 +781,7 @@ export default function FormRenderer() {
 
             <div className="space-y-6">
 
-              {section.fields.map((field) => (
+              {section.fields.map( ( field ) => (
 
                 <div key={field.id}>
 
@@ -799,7 +799,7 @@ export default function FormRenderer() {
                   <FieldRenderer
                     field={field}
                     value={answers[field.id]}
-                    onChange={(v) =>
+                    onChange={( v ) =>
                       handleAnswerChange(
                         field.id,
                         v
@@ -807,10 +807,10 @@ export default function FormRenderer() {
                     }
                   />
                 </div>
-              ))}
+              ) )}
             </div>
           </div>
-        ))}
+        ) )}
 
         <button
           type="submit"

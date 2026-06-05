@@ -19,14 +19,14 @@ const FIELD_TYPES = [
   'repeatable_group'
 ]
 
-function SectionBuilder({
+function SectionBuilder ( {
   section,
   onUpdate,
   onDelete,
   index
-}) {
+} ) {
 
-  const updateField = (fieldIdx, fieldData) => {
+  const updateField = ( fieldIdx, fieldData ) => {
 
     const newFields = [...section.fields]
 
@@ -35,15 +35,15 @@ function SectionBuilder({
       ...fieldData
     }
 
-    onUpdate({
+    onUpdate( {
       ...section,
       fields: newFields
-    })
+    } )
   }
 
   const addField = () => {
 
-    onUpdate({
+    onUpdate( {
       ...section,
       fields: [
         ...section.fields,
@@ -62,38 +62,38 @@ function SectionBuilder({
           }
         }
       ]
-    })
+    } )
   }
 
-  const removeField = (idx) => {
+  const removeField = ( idx ) => {
 
     const newFields =
       section.fields.filter(
-        (_, i) => i !== idx
+        ( _, i ) => i !== idx
       )
 
     const reordered = newFields.map(
-      (f, index) => ({
+      ( f, index ) => ( {
         ...f,
         display_order: index + 1
-      })
+      } )
     )
 
-    onUpdate({
+    onUpdate( {
       ...section,
       fields: reordered
-    })
+    } )
   }
 
   // =========================
   // OPTIONS
   // =========================
 
-  const addOption = (fieldIdx) => {
+  const addOption = ( fieldIdx ) => {
 
     const field = section.fields[fieldIdx]
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       options: [
         ...field.options,
         {
@@ -103,7 +103,7 @@ function SectionBuilder({
             field.options.length + 1
         }
       ]
-    })
+    } )
   }
 
   const updateOption = (
@@ -121,9 +121,9 @@ function SectionBuilder({
       ...optData
     }
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       options: newOpts
-    })
+    } )
   }
 
   const removeOption = (
@@ -134,36 +134,36 @@ function SectionBuilder({
     const field = section.fields[fieldIdx]
 
     const reordered = field.options
-      .filter((_, i) => i !== optIdx)
-      .map((opt, index) => ({
+      .filter( ( _, i ) => i !== optIdx )
+      .map( ( opt, index ) => ( {
         ...opt,
         display_order: index + 1
-      }))
+      } ) )
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       options: reordered
-    })
+    } )
   }
 
   // =========================
   // MATRIX
   // =========================
 
-  const addMatrixRow = (fieldIdx) => {
+  const addMatrixRow = ( fieldIdx ) => {
 
     const field = section.fields[fieldIdx]
 
     const newRows = [
-      ...(field.matrix_config?.rows || []),
+      ...( field.matrix_config?.rows || [] ),
       ''
     ]
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       matrix_config: {
         ...field.matrix_config,
         rows: newRows
       }
-    })
+    } )
   }
 
   const updateMatrixRow = (
@@ -175,17 +175,17 @@ function SectionBuilder({
     const field = section.fields[fieldIdx]
 
     const newRows = [
-      ...(field.matrix_config?.rows || [])
+      ...( field.matrix_config?.rows || [] )
     ]
 
     newRows[idx] = value
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       matrix_config: {
         ...field.matrix_config,
         rows: newRows
       }
-    })
+    } )
   }
 
   const removeMatrixRow = (
@@ -196,23 +196,23 @@ function SectionBuilder({
     const field = section.fields[fieldIdx]
 
     const newRows =
-      (field.matrix_config?.rows || [])
-        .filter((_, i) => i !== idx)
+      ( field.matrix_config?.rows || [] )
+        .filter( ( _, i ) => i !== idx )
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       matrix_config: {
         ...field.matrix_config,
         rows: newRows
       }
-    })
+    } )
   }
 
-  const addMatrixColumn = (fieldIdx) => {
+  const addMatrixColumn = ( fieldIdx ) => {
 
     const field = section.fields[fieldIdx]
 
     const newCols = [
-      ...(field.matrix_config?.columns || []),
+      ...( field.matrix_config?.columns || [] ),
       {
         label: '',
         type: 'text',
@@ -220,12 +220,12 @@ function SectionBuilder({
       }
     ]
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       matrix_config: {
         ...field.matrix_config,
         columns: newCols
       }
-    })
+    } )
   }
 
   const updateMatrixColumn = (
@@ -237,7 +237,7 @@ function SectionBuilder({
     const field = section.fields[fieldIdx]
 
     const newCols = [
-      ...(field.matrix_config?.columns || [])
+      ...( field.matrix_config?.columns || [] )
     ]
 
     newCols[idx] = {
@@ -245,12 +245,12 @@ function SectionBuilder({
       ...patch
     }
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       matrix_config: {
         ...field.matrix_config,
         columns: newCols
       }
-    })
+    } )
   }
 
   const removeMatrixColumn = (
@@ -261,15 +261,15 @@ function SectionBuilder({
     const field = section.fields[fieldIdx]
 
     const newCols =
-      (field.matrix_config?.columns || [])
-        .filter((_, i) => i !== idx)
+      ( field.matrix_config?.columns || [] )
+        .filter( ( _, i ) => i !== idx )
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       matrix_config: {
         ...field.matrix_config,
         columns: newCols
       }
-    })
+    } )
   }
 
   // =========================
@@ -285,7 +285,7 @@ function SectionBuilder({
     const existing =
       field.field_config?.fields || []
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       field_config: {
         ...field.field_config,
         fields: [
@@ -298,7 +298,7 @@ function SectionBuilder({
           }
         ]
       }
-    })
+    } )
   }
 
   const updateRepeatableField = (
@@ -310,7 +310,7 @@ function SectionBuilder({
     const field = section.fields[fieldIdx]
 
     const fields = [
-      ...(field.field_config?.fields || [])
+      ...( field.field_config?.fields || [] )
     ]
 
     fields[subIdx] = {
@@ -318,12 +318,12 @@ function SectionBuilder({
       ...patch
     }
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       field_config: {
         ...field.field_config,
         fields
       }
-    })
+    } )
   }
 
   const removeRepeatableField = (
@@ -334,15 +334,15 @@ function SectionBuilder({
     const field = section.fields[fieldIdx]
 
     const fields =
-      (field.field_config?.fields || [])
-        .filter((_, i) => i !== subIdx)
+      ( field.field_config?.fields || [] )
+        .filter( ( _, i ) => i !== subIdx )
 
-    updateField(fieldIdx, {
+    updateField( fieldIdx, {
       field_config: {
         ...field.field_config,
         fields
       }
-    })
+    } )
   }
 
   return (
@@ -368,11 +368,11 @@ function SectionBuilder({
         <input
           type="text"
           value={section.title}
-          onChange={(e) =>
-            onUpdate({
+          onChange={( e ) =>
+            onUpdate( {
               ...section,
               title: e.target.value
-            })
+            } )
           }
           placeholder="Section title"
           className="px-4 py-2 border rounded-lg"
@@ -381,11 +381,11 @@ function SectionBuilder({
         <input
           type="text"
           value={section.description || ''}
-          onChange={(e) =>
-            onUpdate({
+          onChange={( e ) =>
+            onUpdate( {
               ...section,
               description: e.target.value
-            })
+            } )
           }
           placeholder="Section description"
           className="px-4 py-2 border rounded-lg"
@@ -395,7 +395,7 @@ function SectionBuilder({
       <div className="space-y-4">
 
         {section.fields.map(
-          (field, fieldIdx) => (
+          ( field, fieldIdx ) => (
 
             <div
               key={fieldIdx}
@@ -411,7 +411,7 @@ function SectionBuilder({
                 <button
                   type="button"
                   onClick={() =>
-                    removeField(fieldIdx)
+                    removeField( fieldIdx )
                   }
                   className="text-red-600"
                 >
@@ -424,7 +424,7 @@ function SectionBuilder({
                 <input
                   type="text"
                   value={field.label}
-                  onChange={(e) => {
+                  onChange={( e ) => {
 
                     const label =
                       e.target.value
@@ -441,11 +441,11 @@ function SectionBuilder({
                           ''
                         )
 
-                    updateField(fieldIdx, {
+                    updateField( fieldIdx, {
                       label,
                       field_key:
                         generatedKey
-                    })
+                    } )
                   }}
                   placeholder="Label"
                   className="px-3 py-2 border rounded"
@@ -454,11 +454,11 @@ function SectionBuilder({
                 <input
                   type="text"
                   value={field.field_key}
-                  onChange={(e) =>
-                    updateField(fieldIdx, {
+                  onChange={( e ) =>
+                    updateField( fieldIdx, {
                       field_key:
                         e.target.value
-                    })
+                    } )
                   }
                   placeholder="Field key"
                   className="px-3 py-2 border rounded"
@@ -469,16 +469,16 @@ function SectionBuilder({
 
                 <select
                   value={field.field_type}
-                  onChange={(e) =>
-                    updateField(fieldIdx, {
+                  onChange={( e ) =>
+                    updateField( fieldIdx, {
                       field_type:
                         e.target.value
-                    })
+                    } )
                   }
                   className="px-3 py-2 border rounded"
                 >
 
-                  {FIELD_TYPES.map(type => (
+                  {FIELD_TYPES.map( type => (
 
                     <option
                       key={type}
@@ -486,7 +486,28 @@ function SectionBuilder({
                     >
                       {type}
                     </option>
-                  ))}
+                  ) )}
+                </select>
+                <select
+                  value={field.field_type}
+                  onChange={( e ) =>
+                    updateField( fieldIdx, {
+                      field_type:
+                        e.target.value
+                    } )
+                  }
+                  className="px-3 py-2 border rounded"
+                >
+
+                  {FIELD_TYPES.map( type => (
+
+                    <option
+                      key={type}
+                      value={type}
+                    >
+                      {type}
+                    </option>
+                  ) )}
                 </select>
 
                 {field.field_type !== 'matrix' && (
@@ -497,11 +518,11 @@ function SectionBuilder({
                       checked={
                         field.is_required
                       }
-                      onChange={(e) =>
-                        updateField(fieldIdx, {
+                      onChange={( e ) =>
+                        updateField( fieldIdx, {
                           is_required:
                             e.target.checked
-                        })
+                        } )
                       }
                     />
 
@@ -516,13 +537,13 @@ function SectionBuilder({
                   value={
                     field.display_order || ''
                   }
-                  onChange={(e) =>
-                    updateField(fieldIdx, {
+                  onChange={( e ) =>
+                    updateField( fieldIdx, {
                       display_order:
                         parseInt(
                           e.target.value
                         ) || 1
-                    })
+                    } )
                   }
                   placeholder="Display order"
                   className="px-3 py-2 border rounded"
@@ -536,86 +557,86 @@ function SectionBuilder({
                 'checkbox',
                 'multiselect',
                 'radio'
-              ].includes(field.field_type) && (
+              ].includes( field.field_type ) && (
 
-                <div className="mt-3 border-t pt-3">
+                  <div className="mt-3 border-t pt-3">
 
-                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex justify-between items-center mb-2">
 
-                    <span className="text-sm font-medium">
-                      Options
-                    </span>
+                      <span className="text-sm font-medium">
+                        Options
+                      </span>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        addOption(fieldIdx)
-                      }
-                      className="text-sm text-blue-600"
-                    >
-                      + Add Option
-                    </button>
-                  </div>
-
-                  {field.options.map(
-                    (opt, optIdx) => (
-
-                      <div
-                        key={optIdx}
-                        className="flex gap-2 mb-2"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          addOption( fieldIdx )
+                        }
+                        className="text-sm text-blue-600"
                       >
+                        + Add Option
+                      </button>
+                    </div>
 
-                        <input
-                          type="text"
-                          value={opt.value}
-                          onChange={(e) =>
-                            updateOption(
-                              fieldIdx,
-                              optIdx,
-                              {
-                                value:
-                                  e.target.value
-                              }
-                            )
-                          }
-                          placeholder="Value"
-                          className="flex-1 px-3 py-1 border rounded"
-                        />
+                    {field.options.map(
+                      ( opt, optIdx ) => (
 
-                        <input
-                          type="text"
-                          value={opt.label}
-                          onChange={(e) =>
-                            updateOption(
-                              fieldIdx,
-                              optIdx,
-                              {
-                                label:
-                                  e.target.value
-                              }
-                            )
-                          }
-                          placeholder="Label"
-                          className="flex-1 px-3 py-1 border rounded"
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            removeOption(
-                              fieldIdx,
-                              optIdx
-                            )
-                          }
-                          className="text-red-600"
+                        <div
+                          key={optIdx}
+                          className="flex gap-2 mb-2"
                         >
-                          ×
-                        </button>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
+
+                          <input
+                            type="text"
+                            value={opt.value}
+                            onChange={( e ) =>
+                              updateOption(
+                                fieldIdx,
+                                optIdx,
+                                {
+                                  value:
+                                    e.target.value
+                                }
+                              )
+                            }
+                            placeholder="Value"
+                            className="flex-1 px-3 py-1 border rounded"
+                          />
+
+                          <input
+                            type="text"
+                            value={opt.label}
+                            onChange={( e ) =>
+                              updateOption(
+                                fieldIdx,
+                                optIdx,
+                                {
+                                  label:
+                                    e.target.value
+                                }
+                              )
+                            }
+                            placeholder="Label"
+                            className="flex-1 px-3 py-1 border rounded"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeOption(
+                                fieldIdx,
+                                optIdx
+                              )
+                            }
+                            className="text-red-600"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
 
               {/* MATRIX */}
 
@@ -625,53 +646,53 @@ function SectionBuilder({
                     <span className="text-sm font-medium">Matrix Rows</span>
                     <button
                       type="button"
-                      onClick={() => addMatrixRow(fieldIdx)}
+                      onClick={() => addMatrixRow( fieldIdx )}
                       className="text-sm text-blue-600"
                     >
                       + Add Row
                     </button>
                   </div>
 
-                  {(field.matrix_config?.rows || []).map((row, idx) => (
+                  {( field.matrix_config?.rows || [] ).map( ( row, idx ) => (
                     <div key={idx} className="flex gap-2 mb-2">
                       <input
                         type="text"
                         value={row}
-                        onChange={(e) => updateMatrixRow(fieldIdx, idx, e.target.value)}
+                        onChange={( e ) => updateMatrixRow( fieldIdx, idx, e.target.value )}
                         placeholder="Row label"
                         className="flex-1 px-3 py-1 border rounded"
                       />
                       <button
                         type="button"
-                        onClick={() => removeMatrixRow(fieldIdx, idx)}
+                        onClick={() => removeMatrixRow( fieldIdx, idx )}
                         className="text-red-600"
                       >
                         ×
                       </button>
                     </div>
-                  ))}
+                  ) )}
 
                   <div className="flex justify-between items-center mb-2 mt-3">
                     <span className="text-sm font-medium">Matrix Columns</span>
                     <button
                       type="button"
-                      onClick={() => addMatrixColumn(fieldIdx)}
+                      onClick={() => addMatrixColumn( fieldIdx )}
                       className="text-sm text-blue-600"
                     >
                       + Add Column
                     </button>
                   </div>
 
-                  {(field.matrix_config?.columns || []).map((col, idx) => {
+                  {( field.matrix_config?.columns || [] ).map( ( col, idx ) => {
                     const colLabel = typeof col === 'string' ? col : col.label
-                    const colType = typeof col === 'string' ? 'radio' : (col.type || 'text')
-                    const colRequired = typeof col === 'string' ? false : (col.required || false)
+                    const colType = typeof col === 'string' ? 'radio' : ( col.type || 'text' )
+                    const colRequired = typeof col === 'string' ? false : ( col.required || false )
 
-                    const updateCol = (patch) => {
-                      if (typeof col === 'string') {
-                        updateMatrixColumn(fieldIdx, idx, { label: col, type: 'text', required: false, ...patch })
+                    const updateCol = ( patch ) => {
+                      if ( typeof col === 'string' ) {
+                        updateMatrixColumn( fieldIdx, idx, { label: col, type: 'text', required: false, ...patch } )
                       } else {
-                        updateMatrixColumn(fieldIdx, idx, { ...col, ...patch })
+                        updateMatrixColumn( fieldIdx, idx, { ...col, ...patch } )
                       }
                     }
 
@@ -680,13 +701,13 @@ function SectionBuilder({
                         <input
                           type="text"
                           value={colLabel}
-                          onChange={(e) => updateCol({ label: e.target.value })}
+                          onChange={( e ) => updateCol( { label: e.target.value } )}
                           placeholder="Column label"
                           className="flex-1 px-3 py-1 border rounded"
                         />
                         <select
                           value={colType}
-                          onChange={(e) => updateCol({ type: e.target.value })}
+                          onChange={( e ) => updateCol( { type: e.target.value } )}
                           className="px-2 py-1 border rounded text-sm"
                         >
                           <option value="text">Text</option>
@@ -697,20 +718,20 @@ function SectionBuilder({
                           <input
                             type="checkbox"
                             checked={colRequired}
-                            onChange={(e) => updateCol({ required: e.target.checked })}
+                            onChange={( e ) => updateCol( { required: e.target.checked } )}
                           />
                           Required
                         </label>
                         <button
                           type="button"
-                          onClick={() => removeMatrixColumn(fieldIdx, idx)}
+                          onClick={() => removeMatrixColumn( fieldIdx, idx )}
                           className="text-red-600"
                         >
                           ×
                         </button>
                       </div>
                     )
-                  })}
+                  } )}
                 </div>
               )}
 
@@ -719,178 +740,178 @@ function SectionBuilder({
               {field.field_type ===
                 'repeatable_group' && (
 
-                <div className="mt-3 border-t pt-3">
+                  <div className="mt-3 border-t pt-3">
 
-                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex justify-between items-center mb-3">
 
-                    <span className="text-sm font-medium">
-                      Repeatable Fields
-                    </span>
+                      <span className="text-sm font-medium">
+                        Repeatable Fields
+                      </span>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        addRepeatableField(
-                          fieldIdx
-                        )
-                      }
-                      className="text-sm text-blue-600"
-                    >
-                      + Add Sub Field
-                    </button>
-                  </div>
-
-                  {(field.field_config
-                    ?.fields || []).map(
-                    (
-                      subField,
-                      subIdx
-                    ) => (
-
-                      <div
-                        key={subIdx}
-                        className="border rounded p-3 mb-3"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          addRepeatableField(
+                            fieldIdx
+                          )
+                        }
+                        className="text-sm text-blue-600"
                       >
+                        + Add Sub Field
+                      </button>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-3 mb-2">
+                    {( field.field_config
+                      ?.fields || [] ).map(
+                        (
+                          subField,
+                          subIdx
+                        ) => (
 
-                          <input
-                            type="text"
-                            value={
-                              subField.label
-                            }
-                            onChange={(e) => {
-
-                              const label =
-                                e.target.value
-
-                              const generatedKey =
-                                label
-                                  .toLowerCase()
-                                  .replace(
-                                    /[^a-z0-9]+/g,
-                                    '_'
-                                  )
-                                  .replace(
-                                    /^_|_$/g,
-                                    ''
-                                  )
-
-                              updateRepeatableField(
-                                fieldIdx,
-                                subIdx,
-                                {
-                                  label,
-                                  field_key:
-                                    generatedKey
-                                }
-                              )
-                            }}
-                            placeholder="Label"
-                            className="px-3 py-2 border rounded"
-                          />
-
-                          <input
-                            type="text"
-                            value={
-                              subField.field_key
-                            }
-                            onChange={(e) =>
-                              updateRepeatableField(
-                                fieldIdx,
-                                subIdx,
-                                {
-                                  field_key:
-                                    e.target.value
-                                }
-                              )
-                            }
-                            placeholder="Field Key"
-                            className="px-3 py-2 border rounded"
-                          />
-                        </div>
-
-                        <div className="flex gap-3 items-center">
-
-                          <select
-                            value={
-                              subField.field_type
-                            }
-                            onChange={(e) =>
-                              updateRepeatableField(
-                                fieldIdx,
-                                subIdx,
-                                {
-                                  field_type:
-                                    e.target.value
-                                }
-                              )
-                            }
-                            className="px-3 py-2 border rounded"
+                          <div
+                            key={subIdx}
+                            className="border rounded p-3 mb-3"
                           >
 
-                            {FIELD_TYPES
-                              .filter(
-                                t =>
-                                  t !==
-                                    'matrix' &&
-                                  t !==
-                                    'repeatable_group'
-                              )
-                              .map(type => (
+                            <div className="grid grid-cols-2 gap-3 mb-2">
 
-                                <option
-                                  key={type}
-                                  value={type}
-                                >
-                                  {type}
-                                </option>
-                              ))}
-                          </select>
+                              <input
+                                type="text"
+                                value={
+                                  subField.label
+                                }
+                                onChange={( e ) => {
 
-                          <label className="flex items-center gap-2">
+                                  const label =
+                                    e.target.value
 
-                            <input
-                              type="checkbox"
-                              checked={
-                                subField.is_required
-                              }
-                              onChange={(e) =>
-                                updateRepeatableField(
-                                  fieldIdx,
-                                  subIdx,
-                                  {
-                                    is_required:
-                                      e.target
-                                        .checked
+                                  const generatedKey =
+                                    label
+                                      .toLowerCase()
+                                      .replace(
+                                        /[^a-z0-9]+/g,
+                                        '_'
+                                      )
+                                      .replace(
+                                        /^_|_$/g,
+                                        ''
+                                      )
+
+                                  updateRepeatableField(
+                                    fieldIdx,
+                                    subIdx,
+                                    {
+                                      label,
+                                      field_key:
+                                        generatedKey
+                                    }
+                                  )
+                                }}
+                                placeholder="Label"
+                                className="px-3 py-2 border rounded"
+                              />
+
+                              <input
+                                type="text"
+                                value={
+                                  subField.field_key
+                                }
+                                onChange={( e ) =>
+                                  updateRepeatableField(
+                                    fieldIdx,
+                                    subIdx,
+                                    {
+                                      field_key:
+                                        e.target.value
+                                    }
+                                  )
+                                }
+                                placeholder="Field Key"
+                                className="px-3 py-2 border rounded"
+                              />
+                            </div>
+
+                            <div className="flex gap-3 items-center">
+
+                              <select
+                                value={
+                                  subField.field_type
+                                }
+                                onChange={( e ) =>
+                                  updateRepeatableField(
+                                    fieldIdx,
+                                    subIdx,
+                                    {
+                                      field_type:
+                                        e.target.value
+                                    }
+                                  )
+                                }
+                                className="px-3 py-2 border rounded"
+                              >
+
+                                {FIELD_TYPES
+                                  .filter(
+                                    t =>
+                                      t !==
+                                      'matrix' &&
+                                      t !==
+                                      'repeatable_group'
+                                  )
+                                  .map( type => (
+
+                                    <option
+                                      key={type}
+                                      value={type}
+                                    >
+                                      {type}
+                                    </option>
+                                  ) )}
+                              </select>
+
+                              <label className="flex items-center gap-2">
+
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    subField.is_required
                                   }
-                                )
-                              }
-                            />
+                                  onChange={( e ) =>
+                                    updateRepeatableField(
+                                      fieldIdx,
+                                      subIdx,
+                                      {
+                                        is_required:
+                                          e.target
+                                            .checked
+                                      }
+                                    )
+                                  }
+                                />
 
-                            <span className="text-sm">
-                              Required
-                            </span>
-                          </label>
+                                <span className="text-sm">
+                                  Required
+                                </span>
+                              </label>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeRepeatableField(
-                                fieldIdx,
-                                subIdx
-                              )
-                            }
-                            className="text-red-600"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removeRepeatableField(
+                                    fieldIdx,
+                                    subIdx
+                                  )
+                                }
+                                className="text-red-600"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      )}
+                  </div>
+                )}
             </div>
           )
         )}
@@ -907,46 +928,46 @@ function SectionBuilder({
   )
 }
 
-export default function FormBuilder() {
+export default function FormBuilder () {
 
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [orgs, setOrgs] = useState([])
+  const [orgs, setOrgs] = useState( [] )
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState( {
     organisation_id: '',
     name: '',
     description: '',
     status: 'DRAFT',
     sections: []
-  })
+  } )
 
-  useEffect(() => {
+  useEffect( () => {
 
     organisations.getAll()
-      .then(({ data }) => setOrgs(data))
+      .then( ( { data } ) => setOrgs( data ) )
 
-    if (id) {
+    if ( id ) {
 
-      forms.getById(id)
-        .then(({ data }) => {
+      forms.getById( id )
+        .then( ( { data } ) => {
 
-          setFormData({
+          setFormData( {
             organisation_id: data.organisation_id,
             name: data.name,
             description: data.description || '',
             status: data.status,
             sections: data.sections || []
-          })
-        })
+          } )
+        } )
     }
 
-  }, [id])
+  }, [id] )
 
   const addSection = () => {
 
-    setFormData({
+    setFormData( {
       ...formData,
       sections: [
         ...formData.sections,
@@ -958,38 +979,38 @@ export default function FormBuilder() {
           fields: []
         }
       ]
-    })
+    } )
   }
 
-  const updateSection = (idx, section) => {
+  const updateSection = ( idx, section ) => {
 
     const newSections = [...formData.sections]
 
     newSections[idx] = section
 
-    setFormData({
+    setFormData( {
       ...formData,
       sections: newSections
-    })
+    } )
   }
 
-  const removeSection = (idx) => {
+  const removeSection = ( idx ) => {
 
     const reordered =
       formData.sections
-        .filter((_, i) => i !== idx)
-        .map((section, index) => ({
+        .filter( ( _, i ) => i !== idx )
+        .map( ( section, index ) => ( {
           ...section,
           display_order: index + 1
-        }))
+        } ) )
 
-    setFormData({
+    setFormData( {
       ...formData,
       sections: reordered
-    })
+    } )
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async ( e ) => {
 
     e.preventDefault()
 
@@ -1002,24 +1023,24 @@ export default function FormBuilder() {
         )
       }
 
-      if (id) {
+      if ( id ) {
 
-        await forms.update(id, payload)
+        await forms.update( id, payload )
 
-        toast.success('Form updated')
+        toast.success( 'Form updated' )
 
       } else {
 
-        await forms.create(payload)
+        await forms.create( payload )
 
-        toast.success('Form created')
+        toast.success( 'Form created' )
       }
 
-      navigate('/forms')
+      navigate( '/forms' )
 
-    } catch (err) {
+    } catch ( err ) {
 
-      console.error(err)
+      console.error( err )
 
       toast.error(
         err.response?.data?.error ||
@@ -1056,12 +1077,12 @@ export default function FormBuilder() {
 
               <select
                 value={formData.organisation_id}
-                onChange={(e) =>
-                  setFormData({
+                onChange={( e ) =>
+                  setFormData( {
                     ...formData,
                     organisation_id:
                       e.target.value
-                  })
+                  } )
                 }
                 required
                 className="w-full px-4 py-2 border rounded-lg"
@@ -1071,7 +1092,7 @@ export default function FormBuilder() {
                   Select organisation
                 </option>
 
-                {orgs.map(org => (
+                {orgs.map( org => (
 
                   <option
                     key={org.id}
@@ -1079,7 +1100,7 @@ export default function FormBuilder() {
                   >
                     {org.name}
                   </option>
-                ))}
+                ) )}
               </select>
             </div>
 
@@ -1091,12 +1112,12 @@ export default function FormBuilder() {
 
               <select
                 value={formData.status}
-                onChange={(e) =>
-                  setFormData({
+                onChange={( e ) =>
+                  setFormData( {
                     ...formData,
                     status:
                       e.target.value
-                  })
+                  } )
                 }
                 className="w-full px-4 py-2 border rounded-lg"
               >
@@ -1122,12 +1143,12 @@ export default function FormBuilder() {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({
+              onChange={( e ) =>
+                setFormData( {
                   ...formData,
                   name:
                     e.target.value
-                })
+                } )
               }
               required
               className="w-full px-4 py-2 border rounded-lg"
@@ -1142,12 +1163,12 @@ export default function FormBuilder() {
 
             <textarea
               value={formData.description}
-              onChange={(e) =>
-                setFormData({
+              onChange={( e ) =>
+                setFormData( {
                   ...formData,
                   description:
                     e.target.value
-                })
+                } )
               }
               rows={3}
               className="w-full px-4 py-2 border rounded-lg"
@@ -1158,17 +1179,17 @@ export default function FormBuilder() {
         <div className="mb-6">
 
           {formData.sections.map(
-            (section, idx) => (
+            ( section, idx ) => (
 
               <SectionBuilder
                 key={idx}
                 section={section}
                 index={idx}
-                onUpdate={(s) =>
-                  updateSection(idx, s)
+                onUpdate={( s ) =>
+                  updateSection( idx, s )
                 }
                 onDelete={() =>
-                  removeSection(idx)
+                  removeSection( idx )
                 }
               />
             )
@@ -1199,7 +1220,7 @@ export default function FormBuilder() {
           <button
             type="button"
             onClick={() =>
-              navigate('/forms')
+              navigate( '/forms' )
             }
             className="px-8 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
           >

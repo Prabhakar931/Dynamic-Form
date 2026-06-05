@@ -2,67 +2,67 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { submissions, forms, students } from '../api'
 
-export default function Submissions() {
-  const [submissionsList, setSubmissions] = useState([])
-  const [formsList, setFormsList] = useState([])
-  const [studentsList, setStudentsList] = useState([])
-  const [selectedForm, setSelectedForm] = useState('')
-  const [selectedStudent, setSelectedStudent] = useState('')
+export default function Submissions () {
+  const [submissionsList, setSubmissions] = useState( [] )
+  const [formsList, setFormsList] = useState( [] )
+  const [studentsList, setStudentsList] = useState( [] )
+  const [selectedForm, setSelectedForm] = useState( '' )
+  const [selectedStudent, setSelectedStudent] = useState( '' )
 
-  const [selectedSubmission, setSelectedSubmission] = useState(null)
-  const [showModal, setShowModal] = useState(false)
+  const [selectedSubmission, setSelectedSubmission] = useState( null )
+  const [showModal, setShowModal] = useState( false )
 
-  useEffect(() => {
+  useEffect( () => {
     forms.getAll()
-      .then(({ data }) => setFormsList(data))
-      .catch(() => toast.error('Failed to load forms'))
+      .then( ( { data } ) => setFormsList( data ) )
+      .catch( () => toast.error( 'Failed to load forms' ) )
     students.getAll()
-      .then(({ data }) => setStudentsList(data))
-      .catch(() => toast.error('Failed to load students'))
-  }, [])
+      .then( ( { data } ) => setStudentsList( data ) )
+      .catch( () => toast.error( 'Failed to load students' ) )
+  }, [] )
 
-  useEffect(() => {
+  useEffect( () => {
     fetchSubmissions()
-  }, [selectedForm, selectedStudent])
+  }, [selectedForm, selectedStudent] )
 
   const fetchSubmissions = async () => {
     try {
       const formId = selectedForm || null
       const studentId = selectedStudent || null
-      const { data } = await submissions.getAll(formId, studentId)
-      setSubmissions(data)
-    } catch (err) {
-      toast.error('Failed to load submissions')
+      const { data } = await submissions.getAll( formId, studentId )
+      setSubmissions( data )
+    } catch ( err ) {
+      toast.error( 'Failed to load submissions' )
     }
   }
 
-  const handleDelete = async (id) => {
-    if (confirm('Delete this submission?')) {
+  const handleDelete = async ( id ) => {
+    if ( confirm( 'Delete this submission?' ) ) {
       try {
-        await submissions.delete(id)
-        toast.success('Submission deleted')
+        await submissions.delete( id )
+        toast.success( 'Submission deleted' )
         fetchSubmissions()
-      } catch (err) {
-        toast.error('Failed to delete submission')
+      } catch ( err ) {
+        toast.error( 'Failed to delete submission' )
       }
     }
   }
 
-  const handleView = async (id) => {
+  const handleView = async ( id ) => {
     try {
-      const { data } = await submissions.getById(id)
-      setSelectedSubmission(data)
-      setShowModal(true)
-    } catch (err) {
-      toast.error('Failed to load submission details')
+      const { data } = await submissions.getById( id )
+      setSelectedSubmission( data )
+      setShowModal( true )
+    } catch ( err ) {
+      toast.error( 'Failed to load submission details' )
     }
   }
 
-  const getFormName = (formId) =>
-    formsList.find(f => f.id === formId)?.name || 'Unknown'
+  const getFormName = ( formId ) =>
+    formsList.find( f => f.id === formId )?.name || 'Unknown'
 
-  const getStudentName = (studentId) =>
-    studentsList.find(s => s.id === studentId)?.student_identifier || 'Unknown'
+  const getStudentName = ( studentId ) =>
+    studentsList.find( s => s.id === studentId )?.student_identifier || 'Unknown'
 
   return (
     <div>
@@ -71,28 +71,28 @@ export default function Submissions() {
       <div className="flex gap-4 mb-6">
         <select
           value={selectedForm}
-          onChange={(e) => setSelectedForm(e.target.value)}
+          onChange={( e ) => setSelectedForm( e.target.value )}
           className="px-4 py-2 border rounded-lg"
         >
           <option value="">All Forms</option>
-          {formsList.map(f => (
+          {formsList.map( f => (
             <option key={f.id} value={f.id}>
               {f.name}
             </option>
-          ))}
+          ) )}
         </select>
 
         <select
           value={selectedStudent}
-          onChange={(e) => setSelectedStudent(e.target.value)}
+          onChange={( e ) => setSelectedStudent( e.target.value )}
           className="px-4 py-2 border rounded-lg"
         >
           <option value="">All Students</option>
-          {studentsList.map(s => (
+          {studentsList.map( s => (
             <option key={s.id} value={s.id}>
               {s.student_identifier}
             </option>
-          ))}
+          ) )}
         </select>
       </div>
 
@@ -113,20 +113,20 @@ export default function Submissions() {
             </thead>
 
             <tbody className="divide-y">
-              {submissionsList.map(sub => (
+              {submissionsList.map( sub => (
                 <tr key={sub.id} className="hover:bg-gray-50">
                   <td className="p-4 text-sm">{sub.id}</td>
-                  <td className="p-4 font-medium">{getFormName(sub.form_id)}</td>
-                  <td className="p-4">{getStudentName(sub.student_id)}</td>
+                  <td className="p-4 font-medium">{getFormName( sub.form_id )}</td>
+                  <td className="p-4">{getStudentName( sub.student_id )}</td>
                   <td className="p-4 text-sm text-gray-600">
-                    {new Date(sub.submitted_at).toLocaleString()}
+                    {new Date( sub.submitted_at ).toLocaleString()}
                   </td>
                   <td className="p-4 text-sm">{sub.answers?.length || 0}</td>
 
                   <td className="p-4 text-right space-x-2">
                     {/* 🔵 VIEW BUTTON */}
                     <button
-                      onClick={() => handleView(sub.id)}
+                      onClick={() => handleView( sub.id )}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                     >
                       View
@@ -134,14 +134,14 @@ export default function Submissions() {
 
                     {/* 🔴 DELETE BUTTON */}
                     <button
-                      onClick={() => handleDelete(sub.id)}
+                      onClick={() => handleDelete( sub.id )}
                       className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
                     >
                       Delete
                     </button>
                   </td>
                 </tr>
-              ))}
+              ) )}
             </tbody>
           </table>
         )}
@@ -159,14 +159,14 @@ export default function Submissions() {
               </h3>
 
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => setShowModal( false )}
                 className="text-gray-500 hover:text-black text-xl"
               >
                 ×
               </button>
             </div>
 
-            {selectedSubmission.sections.map((section, sectionIdx) => (
+            {selectedSubmission.sections.map( ( section, sectionIdx ) => (
 
               <div
                 key={sectionIdx}
@@ -181,7 +181,7 @@ export default function Submissions() {
 
                 <div className="p-4 space-y-4">
 
-                  {section.answers.map((ans, index) => (
+                  {section.answers.map( ( ans, index ) => (
 
                     <div
                       key={index}
@@ -194,11 +194,11 @@ export default function Submissions() {
 
                       {/* 🔥 REPEATABLE GROUP */}
                       {ans.field_type === 'repeatable_group' &&
-                        Array.isArray(ans.value) ? (
+                        Array.isArray( ans.answer_json ) ? (
 
                         <div className="space-y-4">
 
-                          {ans.value.map((item, itemIndex) => (
+                          {ans.answer_json.map( ( item, itemIndex ) => (
 
                             <div
                               key={itemIndex}
@@ -211,7 +211,7 @@ export default function Submissions() {
 
                               <div className="space-y-2">
 
-                                {Object.entries(item).map(([key, value]) => (
+                                {Object.entries( item ).map( ( [key, value] ) => (
 
                                   <div
                                     key={key}
@@ -219,55 +219,55 @@ export default function Submissions() {
                                   >
 
                                     <div className="font-medium text-gray-600 capitalize">
-                                      {key.replace(/_/g, ' ')}
+                                      {key.replace( /_/g, ' ' )}
                                     </div>
 
                                     <div className="text-gray-900">
-                                      {String(value)}
+                                      {String( value )}
                                     </div>
 
                                   </div>
-                                ))}
+                                ) )}
 
                               </div>
                             </div>
-                          ))}
+                          ) )}
 
                         </div>
 
-                      ) : Array.isArray(ans.value) ? (
+                      ) : Array.isArray( ans.answer_json ) ? (
 
                         <div className="flex flex-wrap gap-2">
-                          {ans.value.map((v, i) => (
+                          {ans.answer_json.map( ( v, i ) => (
                             <span
                               key={i}
                               className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
                             >
                               {v}
                             </span>
-                          ))}
+                          ) )}
                         </div>
 
-                      ) : typeof ans.value === 'object' &&
-                        ans.value !== null ? (
+                      ) : typeof ans.answer_json === 'object' &&
+                        ans.answer_json !== null ? (
 
                         <pre className="bg-white p-3 rounded border text-sm overflow-auto">
-                          {JSON.stringify(ans.value, null, 2)}
+                          {JSON.stringify( ans.answer_json, null, 2 )}
                         </pre>
 
                       ) : (
 
                         <div className="text-gray-800">
-                          {String(ans.value ?? '')}
+                          {String( ans.answer_json ?? '' )}
                         </div>
 
                       )}
                     </div>
-                  ))}
+                  ) )}
 
                 </div>
               </div>
-            ))}
+            ) )}
           </div>
         </div>
       )}

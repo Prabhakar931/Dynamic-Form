@@ -1,6 +1,6 @@
-const express = require('express')
-const pool = require('../db')
-const auth = require('../middleware/auth')
+const express = require( 'express' )
+const pool = require( '../db' )
+const auth = require( '../middleware/auth' )
 const router = express.Router()
 
 const getFormQuery = `
@@ -65,7 +65,7 @@ const getFormQuery = `
 // =========================
 // CREATE FORM
 // =========================
-router.post('/', auth, async (req, res) => {
+router.post( '/', auth, async ( req, res ) => {
 
   const {
     organisation_id,
@@ -80,29 +80,29 @@ router.post('/', auth, async (req, res) => {
   // =========================
 
   // Must contain at least one section
-  if (!sections || sections.length === 0) {
-    return res.status(400).json({
+  if ( !sections || sections.length === 0 ) {
+    return res.status( 400 ).json( {
       error: 'Form must contain at least one section'
-    })
+    } )
   }
 
   // Must contain at least one field
   const totalFields = sections.reduce(
-    (acc, section) => acc + (section.fields?.length || 0),
+    ( acc, section ) => acc + ( section.fields?.length || 0 ),
     0
   )
 
-  if (totalFields === 0) {
-    return res.status(400).json({
+  if ( totalFields === 0 ) {
+    return res.status( 400 ).json( {
       error: 'Form must contain at least one field'
-    })
+    } )
   }
 
   // Prevent publishing empty form
-  if (status === 'PUBLISHED' && totalFields === 0) {
-    return res.status(400).json({
+  if ( status === 'PUBLISHED' && totalFields === 0 ) {
+    return res.status( 400 ).json( {
       error: 'Cannot publish form without fields'
-    })
+    } )
   }
 
   const fieldKeys = []
@@ -114,18 +114,18 @@ router.post('/', auth, async (req, res) => {
     'multiselect'
   ]
 
-  for (const section of sections) {
+  for ( const section of sections ) {
 
-    for (const field of section.fields || []) {
+    for ( const field of section.fields || [] ) {
 
       // =========================
       // FIELD KEY VALIDATION
       // =========================
 
-      if (!field.field_key || field.field_key.trim() === '') {
-        return res.status(400).json({
+      if ( !field.field_key || field.field_key.trim() === '' ) {
+        return res.status( 400 ).json( {
           error: `Field key missing for ${field.label || 'Unnamed Field'}`
-        })
+        } )
       }
 
       // ✅ NORMALIZE FIELD KEY
@@ -136,44 +136,44 @@ router.post('/', auth, async (req, res) => {
       // ✅ FIELD KEY FORMAT VALIDATION
       const keyRegex = /^[a-z0-9_]+$/
 
-      if (!keyRegex.test(normalizedKey)) {
-        return res.status(400).json({
+      if ( !keyRegex.test( normalizedKey ) ) {
+        return res.status( 400 ).json( {
           error: `Invalid field key: ${field.field_key}`
-        })
+        } )
       }
 
       // ✅ CASE-INSENSITIVE DUPLICATE CHECK
-      if (fieldKeys.includes(normalizedKey)) {
-        return res.status(400).json({
+      if ( fieldKeys.includes( normalizedKey ) ) {
+        return res.status( 400 ).json( {
           error: `Duplicate field key: ${field.field_key}`
-        })
+        } )
       }
 
-      fieldKeys.push(normalizedKey)
+      fieldKeys.push( normalizedKey )
 
       // =========================
       // LABEL VALIDATION
       // =========================
 
-      if (!field.label || field.label.trim() === '') {
-        return res.status(400).json({
+      if ( !field.label || field.label.trim() === '' ) {
+        return res.status( 400 ).json( {
           error: 'Every field must contain a label'
-        })
+        } )
       }
 
       // =========================
       // OPTIONS VALIDATION
       // =========================
 
-      if (optionFields.includes(field.field_type)) {
+      if ( optionFields.includes( field.field_type ) ) {
 
-        if (!field.options || field.options.length === 0) {
-          return res.status(400).json({
+        if ( !field.options || field.options.length === 0 ) {
+          return res.status( 400 ).json( {
             error: `${field.label} requires at least one option`
-          })
+          } )
         }
 
-        for (const option of field.options) {
+        for ( const option of field.options ) {
 
           if (
             !option.value ||
@@ -181,9 +181,9 @@ router.post('/', auth, async (req, res) => {
             !option.label ||
             option.label.trim() === ''
           ) {
-            return res.status(400).json({
+            return res.status( 400 ).json( {
               error: `Invalid option in ${field.label}`
-            })
+            } )
           }
         }
       }
@@ -192,25 +192,25 @@ router.post('/', auth, async (req, res) => {
       // MATRIX VALIDATION
       // =========================
 
-      if (field.field_type === 'matrix') {
+      if ( field.field_type === 'matrix' ) {
 
         if (
           !field.matrix_config ||
-          !Array.isArray(field.matrix_config.rows) ||
-          !Array.isArray(field.matrix_config.columns)
+          !Array.isArray( field.matrix_config.rows ) ||
+          !Array.isArray( field.matrix_config.columns )
         ) {
-          return res.status(400).json({
+          return res.status( 400 ).json( {
             error: `Invalid matrix configuration in ${field.label}`
-          })
+          } )
         }
 
         if (
           field.matrix_config.rows.length === 0 ||
           field.matrix_config.columns.length === 0
         ) {
-          return res.status(400).json({
+          return res.status( 400 ).json( {
             error: `Matrix field ${field.label} requires rows and columns`
-          })
+          } )
         }
 
         // ✅ EMPTY MATRIX VALUE VALIDATION
@@ -222,15 +222,15 @@ router.post('/', auth, async (req, res) => {
 
         const emptyColumn = field.matrix_config.columns.some(
           col => {
-            if (typeof col === 'string') return !col || !col.trim()
-            return !col.label || !col.label.trim() || !validTypes.includes(col.type)
+            if ( typeof col === 'string' ) return !col || !col.trim()
+            return !col.label || !col.label.trim() || !validTypes.includes( col.type )
           }
         )
 
-        if (emptyRow || emptyColumn) {
-          return res.status(400).json({
+        if ( emptyRow || emptyColumn ) {
+          return res.status( 400 ).json( {
             error: `${field.label} matrix rows/columns cannot be empty`
-          })
+          } )
         }
       }
     }
@@ -240,7 +240,7 @@ router.post('/', auth, async (req, res) => {
 
   try {
 
-    await client.query('BEGIN')
+    await client.query( 'BEGIN' )
 
     // =========================
     // CREATE FORM
@@ -267,7 +267,7 @@ router.post('/', auth, async (req, res) => {
     // CREATE SECTIONS
     // =========================
 
-    for (const sectionData of sections) {
+    for ( const sectionData of sections ) {
 
       const sectionResult = await client.query(
         `
@@ -290,7 +290,7 @@ router.post('/', auth, async (req, res) => {
       // CREATE FIELDS
       // =========================
 
-      for (const fieldData of sectionData.fields || []) {
+      for ( const fieldData of sectionData.fields || [] ) {
 
         const fieldResult = await client.query(
           `
@@ -329,7 +329,7 @@ router.post('/', auth, async (req, res) => {
           fieldData.options.length > 0
         ) {
 
-          for (const opt of fieldData.options) {
+          for ( const opt of fieldData.options ) {
 
             await client.query(
               `
@@ -359,8 +359,8 @@ router.post('/', auth, async (req, res) => {
         if (
           fieldData.field_type === 'matrix' &&
           fieldData.matrix_config &&
-          Array.isArray(fieldData.matrix_config.rows) &&
-          Array.isArray(fieldData.matrix_config.columns)
+          Array.isArray( fieldData.matrix_config.rows ) &&
+          Array.isArray( fieldData.matrix_config.columns )
         ) {
 
           await client.query(
@@ -371,44 +371,44 @@ router.post('/', auth, async (req, res) => {
             `,
             [
               field.id,
-              JSON.stringify(fieldData.matrix_config.rows),
-              JSON.stringify(fieldData.matrix_config.columns)
+              JSON.stringify( fieldData.matrix_config.rows ),
+              JSON.stringify( fieldData.matrix_config.columns )
             ]
           )
         }
       }
     }
 
-    await client.query('COMMIT')
+    await client.query( 'COMMIT' )
 
     const formWithDetails = await client.query(
       getFormQuery,
       [form.id]
     )
 
-    res.status(201).json(formWithDetails.rows[0])
+    res.status( 201 ).json( formWithDetails.rows[0] )
 
-  } catch (err) {
+  } catch ( err ) {
 
-    await client.query('ROLLBACK')
+    await client.query( 'ROLLBACK' )
 
-    console.error(err)
+    console.error( err )
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
 
   } finally {
 
     client.release()
   }
-})
+} )
 
 // =========================
 // GET ALL FORMS
 // =========================
 
-router.get('/', auth, async (req, res) => {
+router.get( '/', auth, async ( req, res ) => {
 
   const { organisation_id } = req.query
 
@@ -473,30 +473,30 @@ router.get('/', auth, async (req, res) => {
 
     const params = []
 
-    if (organisation_id) {
+    if ( organisation_id ) {
       query += ' WHERE f.organisation_id = $1'
-      params.push(organisation_id)
+      params.push( organisation_id )
     }
 
     query += ' GROUP BY f.id ORDER BY f.id'
 
-    const result = await pool.query(query, params)
+    const result = await pool.query( query, params )
 
-    res.json(result.rows)
+    res.json( result.rows )
 
-  } catch (err) {
+  } catch ( err ) {
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
   }
-})
+} )
 
 // =========================
 // GET SINGLE FORM
 // =========================
 
-router.get('/:id', async (req, res) => {
+router.get( '/:id', async ( req, res ) => {
 
   try {
 
@@ -505,23 +505,23 @@ router.get('/:id', async (req, res) => {
       [req.params.id]
     )
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
+    if ( result.rows.length === 0 ) {
+      return res.status( 404 ).json( {
         error: 'Form not found'
-      })
+      } )
     }
 
-    res.json(result.rows[0])
+    res.json( result.rows[0] )
 
-  } catch (err) {
+  } catch ( err ) {
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
   }
-})
+} )
 
-router.get('/:id/submissions', auth, async (req, res) => {
+router.get( '/:id/submissions', auth, async ( req, res ) => {
 
   try {
 
@@ -543,23 +543,23 @@ router.get('/:id/submissions', auth, async (req, res) => {
       [req.params.id]
     )
 
-    res.json(result.rows)
+    res.json( result.rows )
 
-  } catch (err) {
+  } catch ( err ) {
 
-    console.error(err)
+    console.error( err )
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
   }
-})
+} )
 
 // =========================
 // UPDATE FORM (sections, fields, options, matrix)
 // =========================
 
-router.put('/:id', auth, async (req, res) => {
+router.put( '/:id', auth, async ( req, res ) => {
 
   const {
     name,
@@ -576,126 +576,126 @@ router.put('/:id', auth, async (req, res) => {
       [req.params.id]
     )
 
-    if (subCheck.rows[0].count > 0) {
-      return res.status(403).json({
+    if ( subCheck.rows[0].count > 0 ) {
+      return res.status( 403 ).json( {
         error: 'Cannot edit a form that has submissions'
-      })
+      } )
     }
 
     // =========================
     // VALIDATIONS (same as POST)
     // =========================
 
-    if (!sections || sections.length === 0) {
-      return res.status(400).json({
+    if ( !sections || sections.length === 0 ) {
+      return res.status( 400 ).json( {
         error: 'Form must contain at least one section'
-      })
+      } )
     }
 
     const totalFields = sections.reduce(
-      (acc, section) => acc + (section.fields?.length || 0),
+      ( acc, section ) => acc + ( section.fields?.length || 0 ),
       0
     )
 
-    if (totalFields === 0) {
-      return res.status(400).json({
+    if ( totalFields === 0 ) {
+      return res.status( 400 ).json( {
         error: 'Form must contain at least one field'
-      })
+      } )
     }
 
     const fieldKeys = []
     const optionFields = ['radio', 'checkbox', 'dropdown', 'multiselect']
 
-    for (const section of sections) {
-      for (const field of section.fields || []) {
+    for ( const section of sections ) {
+      for ( const field of section.fields || [] ) {
 
-        if (!field.field_key || field.field_key.trim() === '') {
-          return res.status(400).json({
+        if ( !field.field_key || field.field_key.trim() === '' ) {
+          return res.status( 400 ).json( {
             error: `Field key missing for ${field.label || 'Unnamed Field'}`
-          })
+          } )
         }
 
         const normalizedKey = field.field_key.trim().toLowerCase()
         const keyRegex = /^[a-z0-9_]+$/
 
-        if (!keyRegex.test(normalizedKey)) {
-          return res.status(400).json({
+        if ( !keyRegex.test( normalizedKey ) ) {
+          return res.status( 400 ).json( {
             error: `Invalid field key: ${field.field_key}`
-          })
+          } )
         }
 
-        if (fieldKeys.includes(normalizedKey)) {
-          return res.status(400).json({
+        if ( fieldKeys.includes( normalizedKey ) ) {
+          return res.status( 400 ).json( {
             error: `Duplicate field key: ${field.field_key}`
-          })
+          } )
         }
 
-        fieldKeys.push(normalizedKey)
+        fieldKeys.push( normalizedKey )
 
-        if (!field.label || field.label.trim() === '') {
-          return res.status(400).json({
+        if ( !field.label || field.label.trim() === '' ) {
+          return res.status( 400 ).json( {
             error: 'Every field must contain a label'
-          })
+          } )
         }
 
-        if (optionFields.includes(field.field_type)) {
-          if (!field.options || field.options.length === 0) {
-            return res.status(400).json({
+        if ( optionFields.includes( field.field_type ) ) {
+          if ( !field.options || field.options.length === 0 ) {
+            return res.status( 400 ).json( {
               error: `${field.label} requires at least one option`
-            })
+            } )
           }
 
-          for (const option of field.options) {
+          for ( const option of field.options ) {
             if (
               !option.value ||
               option.value.trim() === '' ||
               !option.label ||
               option.label.trim() === ''
             ) {
-              return res.status(400).json({
+              return res.status( 400 ).json( {
                 error: `Invalid option in ${field.label}`
-              })
+              } )
             }
           }
         }
 
-        if (field.field_type === 'matrix') {
+        if ( field.field_type === 'matrix' ) {
           if (
             !field.matrix_config ||
-            !Array.isArray(field.matrix_config.rows) ||
-            !Array.isArray(field.matrix_config.columns)
+            !Array.isArray( field.matrix_config.rows ) ||
+            !Array.isArray( field.matrix_config.columns )
           ) {
-            return res.status(400).json({
+            return res.status( 400 ).json( {
               error: `Invalid matrix configuration in ${field.label}`
-            })
+            } )
           }
 
           if (
             field.matrix_config.rows.length === 0 ||
             field.matrix_config.columns.length === 0
           ) {
-            return res.status(400).json({
+            return res.status( 400 ).json( {
               error: `Matrix field ${field.label} requires rows and columns`
-            })
+            } )
           }
 
           const emptyRow = field.matrix_config.rows.some(
             row => !row || !row.trim()
           )
 
-          const validTypes = ['checkbox', 'number', 'text']
+          const validTypes = ['checkbox', 'number', 'text', 'radio']
 
           const emptyColumn = field.matrix_config.columns.some(
             col => {
-              if (typeof col === 'string') return !col || !col.trim()
-              return !col.label || !col.label.trim() || !validTypes.includes(col.type)
+              if ( typeof col === 'string' ) return !col || !col.trim()
+              return !col.label || !col.label.trim() || !validTypes.includes( col.type )
             }
           )
 
-          if (emptyRow || emptyColumn) {
-            return res.status(400).json({
+          if ( emptyRow || emptyColumn ) {
+            return res.status( 400 ).json( {
               error: `${field.label} matrix rows/columns cannot be empty`
-            })
+            } )
           }
         }
       }
@@ -705,7 +705,7 @@ router.put('/:id', auth, async (req, res) => {
 
     try {
 
-      await client.query('BEGIN')
+      await client.query( 'BEGIN' )
 
       // =========================
       // UPDATE FORM METADATA
@@ -729,9 +729,9 @@ router.put('/:id', auth, async (req, res) => {
         ]
       )
 
-      if (formResult.rows.length === 0) {
-        await client.query('ROLLBACK')
-        return res.status(404).json({ error: 'Form not found' })
+      if ( formResult.rows.length === 0 ) {
+        await client.query( 'ROLLBACK' )
+        return res.status( 404 ).json( { error: 'Form not found' } )
       }
 
       const formId = req.params.id
@@ -741,12 +741,12 @@ router.put('/:id', auth, async (req, res) => {
       // =========================
 
       const incomingSectionIds = sections
-        .map(s => s.id)
-        .filter(id => id != null)
+        .map( s => s.id )
+        .filter( id => id != null )
 
-      if (incomingSectionIds.length > 0) {
+      if ( incomingSectionIds.length > 0 ) {
         await client.query(
-          `DELETE FROM form_section WHERE form_id = $1 AND id NOT IN (${incomingSectionIds.map((_, i) => '$' + (i + 2)).join(',')})`,
+          `DELETE FROM form_section WHERE form_id = $1 AND id NOT IN (${incomingSectionIds.map( ( _, i ) => '$' + ( i + 2 ) ).join( ',' )})`,
           [formId, ...incomingSectionIds]
         )
       } else {
@@ -756,11 +756,11 @@ router.put('/:id', auth, async (req, res) => {
         )
       }
 
-      for (const sectionData of sections) {
+      for ( const sectionData of sections ) {
 
         let sectionId
 
-        if (sectionData.id) {
+        if ( sectionData.id ) {
 
           // UPDATE existing section
           await client.query(
@@ -804,12 +804,12 @@ router.put('/:id', auth, async (req, res) => {
 
         const fields = sectionData.fields || []
         const incomingFieldIds = fields
-          .map(f => f.id)
-          .filter(id => id != null)
+          .map( f => f.id )
+          .filter( id => id != null )
 
-        if (incomingFieldIds.length > 0) {
+        if ( incomingFieldIds.length > 0 ) {
           await client.query(
-            `DELETE FROM form_field WHERE section_id = $1 AND id NOT IN (${incomingFieldIds.map((_, i) => '$' + (i + 2)).join(',')})`,
+            `DELETE FROM form_field WHERE section_id = $1 AND id NOT IN (${incomingFieldIds.map( ( _, i ) => '$' + ( i + 2 ) ).join( ',' )})`,
             [sectionId, ...incomingFieldIds]
           )
         } else {
@@ -819,11 +819,11 @@ router.put('/:id', auth, async (req, res) => {
           )
         }
 
-        for (const fieldData of fields) {
+        for ( const fieldData of fields ) {
 
           let fieldId
 
-          if (fieldData.id) {
+          if ( fieldData.id ) {
 
             // UPDATE existing field
             await client.query(
@@ -879,12 +879,12 @@ router.put('/:id', auth, async (req, res) => {
 
           const options = fieldData.options || []
           const incomingOptionIds = options
-            .map(o => o.id)
-            .filter(id => id != null)
+            .map( o => o.id )
+            .filter( id => id != null )
 
-          if (incomingOptionIds.length > 0) {
+          if ( incomingOptionIds.length > 0 ) {
             await client.query(
-              `DELETE FROM field_option WHERE field_id = $1 AND id NOT IN (${incomingOptionIds.map((_, i) => '$' + (i + 2)).join(',')})`,
+              `DELETE FROM field_option WHERE field_id = $1 AND id NOT IN (${incomingOptionIds.map( ( _, i ) => '$' + ( i + 2 ) ).join( ',' )})`,
               [fieldId, ...incomingOptionIds]
             )
           } else {
@@ -894,9 +894,9 @@ router.put('/:id', auth, async (req, res) => {
             )
           }
 
-          for (const opt of options) {
+          for ( const opt of options ) {
 
-            if (opt.id) {
+            if ( opt.id ) {
 
               await client.query(
                 `
@@ -934,14 +934,14 @@ router.put('/:id', auth, async (req, res) => {
           // UPSERT MATRIX CONFIG per field
           // =========================
 
-          if (fieldData.field_type === 'matrix' && fieldData.matrix_config) {
+          if ( fieldData.field_type === 'matrix' && fieldData.matrix_config ) {
 
             const existing = await client.query(
               'SELECT id FROM field_matrix_config WHERE field_id = $1',
               [fieldId]
             )
 
-            if (existing.rows.length > 0) {
+            if ( existing.rows.length > 0 ) {
 
               await client.query(
                 `
@@ -950,8 +950,8 @@ router.put('/:id', auth, async (req, res) => {
                 WHERE field_id = $3
                 `,
                 [
-                  JSON.stringify(fieldData.matrix_config.rows),
-                  JSON.stringify(fieldData.matrix_config.columns),
+                  JSON.stringify( fieldData.matrix_config.rows ),
+                  JSON.stringify( fieldData.matrix_config.columns ),
                   fieldId
                 ]
               )
@@ -966,8 +966,8 @@ router.put('/:id', auth, async (req, res) => {
                 `,
                 [
                   fieldId,
-                  JSON.stringify(fieldData.matrix_config.rows),
-                  JSON.stringify(fieldData.matrix_config.columns)
+                  JSON.stringify( fieldData.matrix_config.rows ),
+                  JSON.stringify( fieldData.matrix_config.columns )
                 ]
               )
             }
@@ -983,43 +983,43 @@ router.put('/:id', auth, async (req, res) => {
         }
       }
 
-      await client.query('COMMIT')
+      await client.query( 'COMMIT' )
 
       const formWithDetails = await client.query(
         getFormQuery,
         [formId]
       )
 
-      res.json(formWithDetails.rows[0])
+      res.json( formWithDetails.rows[0] )
 
-    } catch (err) {
+    } catch ( err ) {
 
-      await client.query('ROLLBACK')
+      await client.query( 'ROLLBACK' )
 
-      console.error(err)
+      console.error( err )
 
-      res.status(500).json({
+      res.status( 500 ).json( {
         error: err.message
-      })
+      } )
 
     } finally {
 
       client.release()
     }
 
-  } catch (err) {
+  } catch ( err ) {
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
   }
-})
+} )
 
 // =========================
 // DELETE FORM
 // =========================
 
-router.delete('/:id', auth, async (req, res) => {
+router.delete( '/:id', auth, async ( req, res ) => {
 
   try {
 
@@ -1028,20 +1028,20 @@ router.delete('/:id', auth, async (req, res) => {
       [req.params.id]
     )
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({
+    if ( result.rowCount === 0 ) {
+      return res.status( 404 ).json( {
         error: 'Form not found'
-      })
+      } )
     }
 
-    res.status(204).send()
+    res.status( 204 ).send()
 
-  } catch (err) {
+  } catch ( err ) {
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
   }
-})
+} )
 
 module.exports = router
