@@ -5,7 +5,7 @@ const path = require('path')
 
 const app = express()
 const PORT = process.env.PORT || 3001
-const API_URL = 'https://dynamic-from-backend.onrender.com/api'
+const API_URL = 'https://dynamic-form-backend-koe5.onrender.com'
 
 app.use(cors())
 app.use(express.json())
@@ -13,7 +13,6 @@ app.use(express.json())
 app.use('/api', createProxyMiddleware({
   target: API_URL,
   changeOrigin: true,
-  // pathRewrite: { '^/api': '/api' },
 }))
 
 app.use(express.static(path.join(__dirname, '../dist')))
