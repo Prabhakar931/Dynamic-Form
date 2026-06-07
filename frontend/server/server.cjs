@@ -13,7 +13,7 @@ app.use(express.json())
 app.use('/api', createProxyMiddleware({
   target: API_URL,
   changeOrigin: true,
-  pathRewrite: { '^/api': '/api' },
+  // pathRewrite: { '^/api': '/api' },
 }))
 
 app.use(express.static(path.join(__dirname, '../dist')))
