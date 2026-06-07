@@ -5,7 +5,7 @@ const path = require('path')
 
 const app = express()
 const PORT = process.env.PORT || 3001
-const API_URL = 'https://dynamic-from-backend.onrender.com'
+const API_URL = 'https://dynamic-from-backend.onrender.com/api'
 
 app.use(cors())
 app.use(express.json())
