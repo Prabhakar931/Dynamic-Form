@@ -1,7 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { forms, organisations, submissions } from '../api'
+
+const formatDate = ( dateStr ) => {
+  if ( !dateStr ) return '-'
+  const d = new Date( dateStr )
+  return d.toLocaleDateString( 'en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  } )
+}
 
 function SubmissionIcon () {
   return (
@@ -10,6 +19,92 @@ function SubmissionIcon () {
         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
+  )
+}
+
+function SubmissionsList ( { submissions = [], handleDeleteSubmission, handleViewDetail } ) {
+
+  const [searchQuery, setSearchQuery] = useState( '' )
+
+  const filteredSubmissions = submissions.filter( ( submission ) => {
+    const query = searchQuery.toLowerCase()
+
+    const matchesIdentifier = submission.identifiers?.some( id =>
+      id.toLowerCase().includes( query )
+    )
+
+    const matchesId = submission.id.toString().includes( query )
+
+    return matchesIdentifier || matchesId
+  } )
+
+  return (
+    <div className="space-y-3">
+
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search by ID or identifier..."
+          value={searchQuery}
+          onChange={( e ) => setSearchQuery( e.target.value )}
+          className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery( '' )}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {filteredSubmissions.map( ( submission ) => (
+        <div
+          key={submission.id}
+          className="group border border-gray-200 rounded-xl p-5 hover:border-blue-200 hover:shadow-sm transition-all"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                {submission.identifiers && Array.isArray( submission.identifiers ) && submission.identifiers.length > 0 ? submission.identifiers[0].slice( 0, 2 )?.toUpperCase() : `#${submission.id}`}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">
+                  {submission.identifiers && Array.isArray( submission.identifiers ) && submission.identifiers.length > 0 ? submission.identifiers.join( ", " ) : `Submission #${submission.id}`}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {formatDate( submission.submitted_at )}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {submission.answer_count > 0
+                    ? `${submission.answer_count} answers`
+                    : 'No answers'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => handleViewDetail( submission.id )}
+                className="px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 font-medium transition-colors"
+              >
+                View
+              </button>
+              <button
+                onClick={( e ) => handleDeleteSubmission( e, submission.id )}
+                className="px-4 py-2 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-medium transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ) )}
+
+      {filteredSubmissions.length === 0 && <div className="text-center py-8 text-gray-500 text-sm border border-dashed border-gray-200 rounded-xl">
+        No matching submissions found.
+      </div>}
+    </div>
   )
 }
 
@@ -23,7 +118,9 @@ export default function Forms () {
 
   // Modal state
   const [showModal, setShowModal] = useState( false )
+  const [loadingOrgs, setLoadingOrgs] = useState( true )
   const [selectedForm, setSelectedForm] = useState( null )
+  const [loadingForms, setLoadingForms] = useState( true )
   const [formSubmissions, setFormSubmissions] = useState( [] )
   const [loadingSubmissions, setLoadingSubmissions] = useState( false )
 
@@ -40,23 +137,29 @@ export default function Forms () {
     fetchForms( selectedOrg || null )
   }, [selectedOrg] )
 
-  const fetchOrgs = async () => {
+  const fetchOrgs = useCallback( async () => {
     try {
+      setLoadingOrgs( true )
       const { data } = await organisations.getAll()
       setOrgs( data )
     } catch ( err ) {
       toast.error( 'Failed to load organisations' )
+    } finally {
+      setLoadingOrgs( false )
     }
-  }
+  }, [] )
 
-  const fetchForms = async ( orgId ) => {
+  const fetchForms = useCallback( async ( orgId ) => {
     try {
+      setLoadingForms( true )
       const { data } = await forms.getAll( orgId )
       setForms( data )
     } catch ( err ) {
       toast.error( 'Failed to load forms' )
+    } finally {
+      setLoadingForms( false )
     }
-  }
+  }, [] )
 
   const handleDelete = async ( id ) => {
     if ( confirm( 'Delete this form?' ) ) {
@@ -122,15 +225,6 @@ export default function Forms () {
       console.error( err )
       toast.error( 'Failed to delete submission' )
     }
-  }
-
-  const formatDate = ( dateStr ) => {
-    if ( !dateStr ) return '-'
-    const d = new Date( dateStr )
-    return d.toLocaleDateString( 'en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    } )
   }
 
   const renderValue = ( value, fieldType, matrixConfig ) => {
@@ -245,109 +339,128 @@ export default function Forms () {
       </div>
 
       <div className="mb-6">
-        <select
-          value={selectedOrg}
-          onChange={( e ) => setSelectedOrg( e.target.value )}
-          className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="">All Organisations</option>
-          {orgs.map( ( org ) => (
-            <option key={org.id} value={org.id}>{org.name}</option>
-          ) )}
-        </select>
+        {loadingOrgs ?
+          <div className="rounded-xl animate-pulse">
+            <div className="flex justify-between">
+              <div className="space-y-2">
+                <div className="h-10 w-60 bg-gray-200 rounded" />
+              </div>
+            </div>
+          </div>
+          : <select
+            value={selectedOrg}
+            onChange={( e ) => setSelectedOrg( e.target.value )}
+            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">All Organisations</option>
+            {orgs.map( ( org ) => (
+              <option key={org.id} value={org.id}>{org.name}</option>
+            ) )}
+          </select>}
       </div>
 
       <div className="grid gap-4">
-        {formsList.length === 0 ? (
-          <div className="bg-white p-10 rounded-lg border text-center">
-            <p className="text-gray-500">No forms yet. Create one to get started.</p>
-          </div>
-        ) : (
-          formsList.map( ( form ) => (
-            <div
-              key={form.id}
-              className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold">{form.name}</h3>
-                  {form.description && (
-                    <p className="text-gray-600 mt-1">{form.description}</p>
-                  )}
-                  <div className="mt-2 flex gap-4 text-sm text-gray-500">
-                    <span>Sections: {form.sections?.length || 0}</span>
-                    <span>
-                      Status:
-                      <span className={`ml-1 px-2 py-0.5 rounded text-xs ${form.status === 'PUBLISHED'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                        {form.status}
-                      </span>
-                    </span>
-                    <span>Submissions: {form.submission_count ?? 0}</span>
+        {loadingForms ?
+          <div className="space-y-4">
+            {[1, 2, 3].map( i => (
+              <div key={i} className="border rounded-xl p-5 animate-pulse">
+                <div className="flex justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 w-20 bg-gray-200 rounded" />
+                    <div className="h-3 w-40 bg-gray-200 rounded" />
+                    <div className="h-3 w-24 bg-gray-200 rounded" />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-16 bg-gray-200 rounded" />
+                    <div className="h-8 w-16 bg-gray-200 rounded" />
                   </div>
                 </div>
+              </div>
+            ) )}
+          </div>
+          : formsList.length === 0 ? (
+            <div className="bg-white p-10 rounded-lg border text-center">
+              <p className="text-gray-500">No forms yet. Create one to get started.</p>
+            </div>
+          ) : (
+            formsList.map( ( form ) => (
+              <div
+                key={form.id}
+                className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-semibold">{form.name}</h3>
+                    {form.description && (
+                      <p className="text-gray-600 mt-1">{form.description}</p>
+                    )}
+                    <div className="mt-2 flex gap-4 text-sm text-gray-500">
+                      <span>Sections: {form.sections?.length || 0}</span>
+                      <span>
+                        Status:
+                        <span className={`ml-1 px-2 py-0.5 rounded text-xs ${form.status === 'PUBLISHED'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                          {form.status}
+                        </span>
+                      </span>
+                      <span>Submissions: {form.submission_count ?? 0}</span>
+                    </div>
+                  </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {form.submission_count > 0 ? (
-                    <span
-                      title="Cannot edit: form has submissions"
-                      className="px-4 py-2 text-sm bg-gray-200 text-gray-400 rounded cursor-not-allowed"
-                    >
-                      Edit
-                    </span>
-                  ) : (
-                    <Link
-                      to={`/forms/${form.id}/edit`}
-                      className="px-4 py-2 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors"
-                    >
-                      Edit
-                    </Link>
-                  )}
-
-                  {form.status === 'PUBLISHED' && ( form.sections?.length || 0 ) > 0 && (
-                    <>
+                  <div className="flex flex-wrap gap-2">
+                    {form.submission_count > 0 ? (
+                      <span
+                        title="Cannot edit: form has submissions"
+                        className="px-4 py-2 text-sm bg-gray-200 text-gray-400 rounded cursor-not-allowed"
+                      >
+                        Edit
+                      </span>
+                    ) : (
                       <Link
-                        to={`/forms/${form.id}/render`}
-                        className="px-4 py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        to={`/forms/${form.id}/edit`}
+                        className="px-4 py-2 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors"
                       >
-                        View Form
+                        Edit
                       </Link>
+                    )}
 
-                      <button
-                        onClick={() => handleCopyLink( form.id )}
-                        className="px-4 py-2 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors"
-                      >
-                        Copy Link
-                      </button>
+                    {form.status === 'PUBLISHED' && ( form.sections?.length || 0 ) > 0 && (
+                      <>
+                        <button
+                          onClick={() => handleCopyLink( form.id )}
+                          className="px-4 py-2 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors"
+                        >
+                          Copy Link
+                        </button>
 
-                      <button
-                        onClick={() => handleViewSubmissions( form )}
-                        className="px-4 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-                      >
-                        View Submissions
-                      </button>
-                    </>
-                  )}
+                        <button
+                          onClick={() => handleViewSubmissions( form )}
+                          className="px-4 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                        >
+                          View Submissions
+                        </button>
+                      </>
+                    )}
 
-                  <button
-                    onClick={() => handleDelete( form.id )}
-                    className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                  >
-                    Delete
-                  </button>
+                    <button
+                      onClick={() => handleDelete( form.id )}
+                      className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) )
-        )}
+            ) )
+          )}
       </div>
 
       {/* ============ SUBMISSIONS LIST MODAL ============ */}
       {showModal && selectedForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col mx-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full h-[90vh] flex flex-col mx-4">
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b">
               <div className="flex items-center gap-3">
@@ -391,49 +504,7 @@ export default function Forms () {
                   <p className="mt-1 text-sm">This form has not received any submissions.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {formSubmissions.map( ( submission ) => (
-                    <div
-                      key={submission.id}
-                      className="group border border-gray-200 rounded-xl p-5 hover:border-blue-200 hover:shadow-sm transition-all"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-                            #{submission.id}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-800">
-                              Submission #{submission.id}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {formatDate( submission.submitted_at )}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {submission.answer_count > 0
-                                ? `${submission.answer_count} answers`
-                                : 'No answers'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleViewDetail( submission.id )}
-                            className="px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 font-medium transition-colors"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={( e ) => handleDeleteSubmission( e, submission.id )}
-                            className="px-4 py-2 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-medium transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) )}
-                </div>
+                <SubmissionsList handleDeleteSubmission={handleDeleteSubmission} handleViewDetail={handleViewDetail} submissions={formSubmissions} />
               )}
             </div>
           </div>

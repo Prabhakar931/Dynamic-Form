@@ -22,6 +22,8 @@ const getFormQuery = `
               'field_key', ff.field_key,
               'field_type', ff.field_type,
               'is_required', ff.is_required,
+              'is_unique', ff.is_unique,
+              'is_identifier', ff.is_identifier,
               'display_order', ff.display_order,
               'field_config', ff.field_config,
               'options', (
@@ -301,10 +303,12 @@ router.post( '/', auth, async ( req, res ) => {
             field_key,
             field_type,
             is_required,
+            is_identifier,
+            is_unique,
             display_order,
             field_config
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
           RETURNING *
           `,
           [
@@ -313,6 +317,8 @@ router.post( '/', auth, async ( req, res ) => {
             fieldData.field_key.trim().toLowerCase(),
             fieldData.field_type,
             fieldData.is_required || false,
+            fieldData.is_identifier || false,
+            fieldData.is_unique || false,
             fieldData.display_order ?? 0,
             fieldData.field_config || {}
           ]
@@ -527,18 +533,26 @@ router.get( '/:id/submissions', auth, async ( req, res ) => {
 
     const result = await pool.query(
       `
+      WITH fa AS (
+        SELECT
+          ans.submission_id,
+          COUNT(ans.id) AS answer_count,
+          ARRAY_AGG(ans.answer_text) FILTER (WHERE field.is_identifier IS TRUE) AS identifiers
+        FROM form_answer ans
+        LEFT JOIN form_field field ON field.id = ans.field_id
+        WHERE ans.submission_id IN (SELECT id FROM form_submission WHERE form_id = $1)
+        GROUP BY ans.submission_id
+      )
       SELECT
         s.*,
         f.name AS form_name,
-        COALESCE(
-          (SELECT COUNT(*) FROM form_answer WHERE submission_id = s.id),
-          0
-        )::int AS answer_count
+        COALESCE(fa.answer_count, 0)::int AS answer_count,
+        fa.identifiers
       FROM form_submission s
-      LEFT JOIN form f
-      ON s.form_id = f.id
+      LEFT JOIN form f ON s.form_id = f.id
+      LEFT JOIN fa ON s.id = fa.submission_id
       WHERE s.form_id = $1
-      ORDER BY s.submitted_at DESC
+      ORDER BY s.submitted_at DESC;
       `,
       [req.params.id]
     )
@@ -834,15 +848,19 @@ router.put( '/:id', auth, async ( req, res ) => {
                 field_key = $2,
                 field_type = $3,
                 is_required = $4,
-                display_order = $5,
-                field_config = $6
-              WHERE id = $7
+                is_identifier = $5,
+                is_unique = $6,
+                display_order = $7,
+                field_config = $8
+              WHERE id = $9
               `,
               [
                 fieldData.label,
                 fieldData.field_key.trim().toLowerCase(),
                 fieldData.field_type,
                 fieldData.is_required || false,
+                fieldData.is_identifier || false,
+                fieldData.is_unique || false,
                 fieldData.display_order ?? 0,
                 fieldData.field_config || {},
                 fieldData.id
@@ -856,7 +874,7 @@ router.put( '/:id', auth, async ( req, res ) => {
             const result = await client.query(
               `
               INSERT INTO form_field
-              (section_id, label, field_key, field_type, is_required, display_order, field_config)
+              (section_id, label, field_key, field_type, is_required, is_identifier, is_unique, display_order, field_config)
               VALUES ($1, $2, $3, $4, $5, $6, $7)
               RETURNING id
               `,
@@ -866,6 +884,8 @@ router.put( '/:id', auth, async ( req, res ) => {
                 fieldData.field_key.trim().toLowerCase(),
                 fieldData.field_type,
                 fieldData.is_required || false,
+                fieldData.is_identifier || false,
+                fieldData.is_unique || false,
                 fieldData.display_order ?? 0,
                 fieldData.field_config || {}
               ]

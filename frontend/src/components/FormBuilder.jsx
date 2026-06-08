@@ -52,6 +52,8 @@ function SectionBuilder ( {
           field_key: '',
           field_type: 'text',
           is_required: false,
+          is_identifier: false,
+          is_unique: false,
           display_order:
             section.fields.length + 1,
           field_config: {},
@@ -510,28 +512,6 @@ function SectionBuilder ( {
                   ) )}
                 </select>
 
-                {field.field_type !== 'matrix' && (
-                  <label className="flex items-center gap-2">
-
-                    <input
-                      type="checkbox"
-                      checked={
-                        field.is_required
-                      }
-                      onChange={( e ) =>
-                        updateField( fieldIdx, {
-                          is_required:
-                            e.target.checked
-                        } )
-                      }
-                    />
-
-                    <span className="text-sm">
-                      Required
-                    </span>
-                  </label>
-                )}
-
                 <input
                   type="number"
                   value={
@@ -548,6 +528,71 @@ function SectionBuilder ( {
                   placeholder="Display order"
                   className="px-3 py-2 border rounded"
                 />
+
+                <div className='flex gap-2 items-center'>
+                  {field.field_type !== 'matrix' && (
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={
+                          field.is_required
+                        }
+                        onChange={( e ) =>
+                          updateField( fieldIdx, {
+                            is_required: e.target.checked,
+                            is_identifier: e.target.checked ? field.is_identifier : false,
+                            is_unique: e.target.checked ? field.is_unique : false
+                          } )
+                        }
+                      />
+                      <span className="text-sm">
+                        Required
+                      </span>
+                    </label>
+                  )}
+                  {["text", "email"].includes( field.field_type ) && (
+                    <label className="flex items-center gap-2">
+                      <input
+                        disabled={!field.is_required}
+                        type="checkbox"
+                        checked={
+                          field.is_identifier
+                        }
+                        onChange={( e ) =>
+                          updateField( fieldIdx, {
+                            is_identifier:
+                              e.target.checked
+                          } )
+                        }
+                      />
+                      <span className="text-sm">
+                        Identifier
+                      </span>
+                    </label>
+                  )}
+                  {["text", "email"].includes( field.field_type ) && (
+                    <label className="flex items-center gap-2">
+                      <input
+                        disabled={!field.is_required}
+                        type="checkbox"
+                        checked={
+                          field.is_unique
+                        }
+                        onChange={( e ) =>
+                          updateField( fieldIdx, {
+                            is_unique:
+                              e.target.checked
+                          } )
+                        }
+                      />
+                      <span className="text-sm">
+                        Unique
+                      </span>
+                    </label>
+                  )}
+                </div>
+
+
               </div>
 
               {/* OPTIONS */}
@@ -952,7 +997,6 @@ export default function FormBuilder () {
 
       forms.getById( id )
         .then( ( { data } ) => {
-
           setFormData( {
             organisation_id: data.organisation_id,
             name: data.name,

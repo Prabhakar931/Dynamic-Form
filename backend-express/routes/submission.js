@@ -1,17 +1,34 @@
-const express = require('express')
-const pool = require('../db')
-const auth = require('../middleware/auth')
+const express = require( 'express' )
+const pool = require( '../db' )
+const auth = require( '../middleware/auth' )
 const router = express.Router()
 
 /**
  * CREATE SUBMISSION
  */
-router.post('/', async (req, res) => {
+router.post( '/', async ( req, res ) => {
   const { form_id, answers } = req.body
   const client = await pool.connect()
 
   try {
-    await client.query('BEGIN')
+    await client.query( 'BEGIN' )
+
+    const uniqueFormFieldsRes = await client.query( `SELECT ff.id,field_key,ff.label FROM form_field ff JOIN form_section fs on fs.id=ff.section_id WHERE fs.form_id = $1 AND ff.is_unique`, [form_id] )
+    const uniqueFormFields = uniqueFormFieldsRes.rows
+
+    let alreadyExists = null
+
+    for ( const field of uniqueFormFields ) {
+      const answer = answers.find( ans => ans.field_id === field.id )?.answer_text
+      const exists = await client.query( `SELECT field_id FROM form_answer fa JOIN form_submission fs ON fs.id=fa.submission_id WHERE fs.form_id=$1 AND fa.field_id=$2 AND fa.answer_text=$3`, [form_id, field.id, answer] )
+      if ( exists.rowCount > 0 ) {
+        alreadyExists = { ...field, answer }
+        break
+      }
+    }
+
+    if ( alreadyExists )
+      return res.status( 400 ).json( { error: `Submission already exists for ${alreadyExists.answer}!` } )
 
     // ✅ CREATE SUBMISSION
     const submissionResult = await client.query(
@@ -25,10 +42,10 @@ router.post('/', async (req, res) => {
     )
 
     const submission = submissionResult.rows[0]
-    console.log('Created submission with ID:', answers)
+    console.log( 'Created submission with ID:', answers )
     // ✅ INSERT ANSWERS
-    if (answers && answers.length > 0) {
-      for (const answer of answers) {
+    if ( answers && answers.length > 0 ) {
+      for ( const answer of answers ) {
         await client.query(
           `
           INSERT INTO form_answer
@@ -49,14 +66,14 @@ router.post('/', async (req, res) => {
 
             // ✅ FIX JSON ISSUE
             answer.answer_json
-              ? JSON.stringify(answer.answer_json)
+              ? JSON.stringify( answer.answer_json )
               : null
           ]
         )
       }
     }
 
-    await client.query('COMMIT')
+    await client.query( 'COMMIT' )
 
     // ✅ RETURN CREATED SUBMISSION
     const result = await client.query(
@@ -90,26 +107,26 @@ router.post('/', async (req, res) => {
       [submission.id]
     )
 
-    res.status(201).json(result.rows[0])
+    res.status( 201 ).json( result.rows[0] )
 
-  } catch (err) {
-    await client.query('ROLLBACK')
+  } catch ( err ) {
+    await client.query( 'ROLLBACK' )
 
-    console.error(err)
+    console.error( err )
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
 
   } finally {
     client.release()
   }
-})
+} )
 
 /**
  * GET ALL SUBMISSIONS
  */
-router.get('/', auth, async (req, res) => {
+router.get( '/', auth, async ( req, res ) => {
   const { form_id } = req.query
 
   try {
@@ -140,13 +157,13 @@ router.get('/', auth, async (req, res) => {
     const params = []
     const conditions = []
 
-    if (form_id) {
-      params.push(form_id)
-      conditions.push(`fs.form_id = $${params.length}`)
+    if ( form_id ) {
+      params.push( form_id )
+      conditions.push( `fs.form_id = $${params.length}` )
     }
 
-    if (conditions.length > 0) {
-      query += ` WHERE ${conditions.join(' AND ')}`
+    if ( conditions.length > 0 ) {
+      query += ` WHERE ${conditions.join( ' AND ' )}`
     }
 
     query += `
@@ -154,23 +171,23 @@ router.get('/', auth, async (req, res) => {
       ORDER BY fs.id DESC
     `
 
-    const result = await pool.query(query, params)
+    const result = await pool.query( query, params )
 
-    res.json(result.rows)
+    res.json( result.rows )
 
-  } catch (err) {
-    console.error(err)
+  } catch ( err ) {
+    console.error( err )
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
   }
-})
+} )
 
 /**
  * GET SINGLE SUBMISSION
  */
-router.get('/:id', auth, async (req, res) => {
+router.get( '/:id', auth, async ( req, res ) => {
   const { id } = req.params
 
   try {
@@ -192,10 +209,10 @@ router.get('/:id', auth, async (req, res) => {
       [id]
     )
 
-    if (submissionResult.rows.length === 0) {
-      return res.status(404).json({
+    if ( submissionResult.rows.length === 0 ) {
+      return res.status( 404 ).json( {
         error: 'Submission not found'
-      })
+      } )
     }
 
     // ✅ GET ANSWERS + OPTIONS
@@ -257,10 +274,9 @@ router.get('/:id', auth, async (req, res) => {
 
     // ✅ GROUP BY SECTION
     const sectionMap = {}
-    console.log(answersResult.rows)
-    for (const row of answersResult.rows) {
+    for ( const row of answersResult.rows ) {
 
-      if (!sectionMap[row.section_id]) {
+      if ( !sectionMap[row.section_id] ) {
         sectionMap[row.section_id] = {
           title: row.section_title,
           order: row.section_order,
@@ -275,51 +291,51 @@ router.get('/:id', auth, async (req, res) => {
 
       // ✅ HANDLE RADIO / DROPDOWN
       if (
-        ['radio', 'dropdown'].includes(row.field_type)
+        ['radio', 'dropdown'].includes( row.field_type )
       ) {
         const matchedOption = row.options.find(
-          (opt) => opt.value === value
+          ( opt ) => opt.value === value
         )
 
-        if (matchedOption) {
+        if ( matchedOption ) {
           value = matchedOption.label
         }
       }
 
       // ✅ HANDLE CHECKBOX / MULTISELECT
       if (
-        ['checkbox', 'multiselect'].includes(row.field_type)
+        ['checkbox', 'multiselect'].includes( row.field_type )
       ) {
         let parsedValues = []
 
         try {
-          parsedValues = Array.isArray(row.answer_json)
+          parsedValues = Array.isArray( row.answer_json )
             ? row.answer_json
-            : JSON.parse(row.answer_json || '[]')
+            : JSON.parse( row.answer_json || '[]' )
         } catch {
           parsedValues = []
         }
 
-        value = parsedValues.map((selectedValue) => {
+        value = parsedValues.map( ( selectedValue ) => {
           const matchedOption = row.options.find(
-            (opt) => opt.value === selectedValue
+            ( opt ) => opt.value === selectedValue
           )
 
           return matchedOption
             ? matchedOption.label
             : selectedValue
-        })
+        } )
       }
 
       // ✅ HANDLE REPEATABLE GROUP
 
-      if (row.field_type === 'repeatable_group') {
+      if ( row.field_type === 'repeatable_group' ) {
 
         try {
 
-          value = Array.isArray(row.answer_json)
+          value = Array.isArray( row.answer_json )
             ? row.answer_json
-            : JSON.parse(row.answer_json || '[]')
+            : JSON.parse( row.answer_json || '[]' )
 
         } catch {
 
@@ -328,36 +344,36 @@ router.get('/:id', auth, async (req, res) => {
       }
 
 
-      sectionMap[row.section_id].answers.push({
+      sectionMap[row.section_id].answers.push( {
         label: row.label,
         field_type: row.field_type,
         value,
         matrix_config: row.matrix_config
-      })
+      } )
     }
 
-    const sections = Object.values(sectionMap).sort(
-      (a, b) => a.order - b.order
+    const sections = Object.values( sectionMap ).sort(
+      ( a, b ) => a.order - b.order
     )
 
-    res.json({
+    res.json( {
       submission: submissionResult.rows[0],
       sections
-    })
+    } )
 
-  } catch (err) {
-    console.error(err)
+  } catch ( err ) {
+    console.error( err )
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
   }
-})
+} )
 
 /**
  * DELETE SUBMISSION
  */
-router.delete('/:id', auth, async (req, res) => {
+router.delete( '/:id', auth, async ( req, res ) => {
   try {
 
     const result = await pool.query(
@@ -368,21 +384,21 @@ router.delete('/:id', auth, async (req, res) => {
       [req.params.id]
     )
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({
+    if ( result.rowCount === 0 ) {
+      return res.status( 404 ).json( {
         error: 'Submission not found'
-      })
+      } )
     }
 
-    res.status(204).send()
+    res.status( 204 ).send()
 
-  } catch (err) {
-    console.error(err)
+  } catch ( err ) {
+    console.error( err )
 
-    res.status(500).json({
+    res.status( 500 ).json( {
       error: err.message
-    })
+    } )
   }
-})
+} )
 
 module.exports = router
