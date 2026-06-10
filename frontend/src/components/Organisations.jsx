@@ -59,7 +59,7 @@ export default function Organisations () {
         toast.success( 'Organisation deleted' )
         fetchOrganisations()
       } catch ( err ) {
-        toast.error( 'Failed to delete organisation' )
+        toast.error( err?.response?.data?.error ||  'Failed to delete organisation' )
       }
     }
   }

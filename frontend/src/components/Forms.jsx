@@ -162,7 +162,7 @@ export default function Forms () {
   }, [] )
 
   const handleDelete = async ( id ) => {
-    if ( confirm( 'Delete this form?' ) ) {
+    if ( confirm( 'Delete this form? All the submissions will be deleted.' ) ) {
       try {
         await forms.delete( id )
         toast.success( 'Form deleted' )
